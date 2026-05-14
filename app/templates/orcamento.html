@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Solicitar Orçamento — Carvalhaes Iluminação{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+
+    <div class="text-center mb-10">
+        <h1 class="text-3xl font-bold text-gray-900">Solicitar Orçamento</h1>
+        <p class="text-gray-500 mt-2">Preencha o formulário e entraremos em contato em breve.</p>
+    </div>
+
+    <div class="bg-white border border-gray-100 rounded-2xl shadow-sm p-8">
+        <form method="POST" action="/orcamento" class="space-y-6">
+
+            <div>
+                <label for="nome" class="block text-sm font-medium text-gray-700 mb-1">
+                    Nome completo <span class="text-red-500">*</span>
+                </label>
+                <input type="text" id="nome" name="nome" required
+                       placeholder="Seu nome"
+                       class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition">
+            </div>
+
+            <div>
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">
+                    E-mail <span class="text-red-500">*</span>
+                </label>
+                <input type="email" id="email" name="email" required
+                       placeholder="seu@email.com"
+                       class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition">
+            </div>
+
+            <div>
+                <label for="telefone" class="block text-sm font-medium text-gray-700 mb-1">
+                    Telefone / WhatsApp
+                </label>
+                <input type="tel" id="telefone" name="telefone"
+                       placeholder="(00) 90000-0000"
+                       class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition">
+            </div>
+
+            <div>
+                <label for="mensagem" class="block text-sm font-medium text-gray-700 mb-1">
+                    Mensagem
+                </label>
+                <textarea id="mensagem" name="mensagem" rows="5"
+                          placeholder="Descreva o projeto ou os produtos de interesse..."
+                          class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition resize-none"></textarea>
+            </div>
+
+            <button type="submit"
+                    class="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3 rounded-xl transition-colors text-lg">
+                Enviar Solicitação
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

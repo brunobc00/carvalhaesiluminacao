@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}{{ produto.nome }} — Carvalhaes Iluminação{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
+    <!-- Breadcrumb -->
+    <nav class="flex items-center gap-2 text-sm text-gray-400 mb-8">
+        <a href="/" class="hover:text-amber-600">Início</a>
+        <span>/</span>
+        <a href="/produtos" class="hover:text-amber-600">Produtos</a>
+        {% if produto.categoria %}
+        <span>/</span>
+        <a href="/produtos?categoria={{ produto.categoria | urlencode }}" class="hover:text-amber-600">{{ produto.categoria }}</a>
+        {% endif %}
+        <span>/</span>
+        <span class="text-gray-600">{{ produto.nome }}</span>
+    </nav>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+        <!-- Imagem -->
+        <div class="aspect-square bg-amber-50 rounded-2xl flex items-center justify-center overflow-hidden">
+            {% if produto.imagem_path %}
+            <img src="/uploads/{{ produto.imagem_path }}"
+                 alt="{{ produto.nome }}"
+                 class="w-full h-full object-cover rounded-2xl">
+            {% else %}
+            <svg class="w-28 h-28 text-amber-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                      d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+            </svg>
+            {% endif %}
+        </div>
+
+        <!-- Detalhes -->
+        <div class="flex flex-col justify-center">
+            {% if produto.categoria %}
+            <span class="text-sm text-amber-600 font-semibold uppercase tracking-widest mb-2">
+                {{ produto.categoria }}
+            </span>
+            {% endif %}
+
+            <h1 class="text-3xl font-bold text-gray-900 mb-4">{{ produto.nome }}</h1>
+
+            {% if produto.descricao %}
+            <p class="text-gray-600 leading-relaxed mb-6">{{ produto.descricao }}</p>
+            {% endif %}
+
+            {% if produto.mostrar_preco and produto.preco %}
+            <div class="mb-6">
+                <span class="text-3xl font-bold text-amber-600">
+                    R$ {{ "%.2f"|format(produto.preco) }}
+                </span>
+            </div>
+            {% else %}
+            <p class="text-gray-400 italic mb-6">Preço sob consulta</p>
+            {% endif %}
+
+            <a href="/orcamento"
+               class="bg-amber-500 hover:bg-amber-600 text-white font-semibold px-8 py-3 rounded-xl transition-colors text-center text-lg inline-block">
+                Solicitar Orçamento
+            </a>
+
+            <a href="/produtos" class="mt-4 text-sm text-gray-400 hover:text-amber-600 text-center">
+                &larr; Voltar aos produtos
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

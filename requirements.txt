@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+psycopg2-binary
+python-multipart
+python-dotenv
+jinja2
+bcrypt
+itsdangerous
+aiofiles
+python-slugify

@@ -1,0 +1,32 @@
+/* Carvalhaes Iluminação — Custom CSS */
+
+/* Line clamp utility (for older browsers) */
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Smooth scrolling */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Focus visible outline for accessibility */
+:focus-visible {
+    outline: 2px solid #f59e0b;
+    outline-offset: 2px;
+}
+
+/* File input styling reset */
+input[type="file"] {
+    cursor: pointer;
+}
+
+/* Transition defaults */
+a, button {
+    transition-property: color, background-color, border-color, opacity, box-shadow;
+    transition-duration: 150ms;
+    transition-timing-function: ease-in-out;
+}

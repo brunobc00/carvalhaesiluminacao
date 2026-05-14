@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Produtos — Carvalhaes Iluminação{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
+    <!-- Cabeçalho -->
+    <div class="mb-10">
+        <h1 class="text-3xl font-bold text-gray-900">Nossos Produtos</h1>
+        <p class="text-gray-500 mt-2">Encontre a luminária ideal para o seu projeto</p>
+    </div>
+
+    <!-- Filtro por categoria -->
+    {% if categorias %}
+    <div class="flex flex-wrap gap-2 mb-10">
+        <a href="/produtos"
+           class="px-4 py-2 rounded-full text-sm font-medium transition-colors
+                  {% if not categoria_ativa %}bg-amber-500 text-white{% else %}bg-gray-100 text-gray-600 hover:bg-amber-100 hover:text-amber-700{% endif %}">
+            Todos
+        </a>
+        {% for cat in categorias %}
+        <a href="/produtos?categoria={{ cat | urlencode }}"
+           class="px-4 py-2 rounded-full text-sm font-medium transition-colors
+                  {% if categoria_ativa == cat %}bg-amber-500 text-white{% else %}bg-gray-100 text-gray-600 hover:bg-amber-100 hover:text-amber-700{% endif %}">
+            {{ cat }}
+        </a>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Grid de produtos -->
+    {% if produtos %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        {% for produto in produtos %}
+        <a href="/produtos/{{ produto.slug }}"
+           class="bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow overflow-hidden group">
+            <div class="aspect-square bg-amber-50 flex items-center justify-center overflow-hidden">
+                {% if produto.imagem_path %}
+                <img src="/uploads/{{ produto.imagem_path }}"
+                     alt="{{ produto.nome }}"
+                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                {% else %}
+                <svg class="w-20 h-20 text-amber-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                          d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                </svg>
+                {% endif %}
+            </div>
+            <div class="p-5">
+                {% if produto.categoria %}
+                <span class="text-xs text-amber-600 font-medium uppercase tracking-wide">{{ produto.categoria }}</span>
+                {% endif %}
+                <h2 class="font-semibold text-gray-900 mt-1 text-lg leading-tight">{{ produto.nome }}</h2>
+                {% if produto.descricao %}
+                <p class="text-gray-500 text-sm mt-1 line-clamp-2">{{ produto.descricao }}</p>
+                {% endif %}
+                {% if produto.mostrar_preco and produto.preco %}
+                <p class="text-amber-600 font-bold text-xl mt-3">
+                    R$ {{ "%.2f"|format(produto.preco) }}
+                </p>
+                {% elif not produto.mostrar_preco or not produto.preco %}
+                <p class="text-gray-400 text-sm mt-3 italic">Consulte o preço</p>
+                {% endif %}
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-24 text-gray-400">
+        <svg class="w-16 h-16 mx-auto mb-4 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                  d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+        </svg>
+        <p class="text-lg font-medium text-gray-400">Nenhum produto encontrado.</p>
+        {% if categoria_ativa %}
+        <a href="/produtos" class="mt-4 inline-block text-amber-600 hover:underline">Ver todos os produtos</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

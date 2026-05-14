@@ -1,0 +1,114 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}{% if produto %}Editar Produto{% else %}Novo Produto{% endif %}{% endblock %}
+{% block page_title %}{% if produto %}Editar Produto{% else %}Novo Produto{% endif %}{% endblock %}
+{% block nav_produtos %}bg-amber-500 text-white{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl">
+    <div class="mb-6">
+        <a href="/admin/produtos" class="text-sm text-gray-400 hover:text-amber-600">← Voltar para produtos</a>
+    </div>
+
+    {% if erro %}
+    <div class="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3 mb-6">{{ erro }}</div>
+    {% endif %}
+
+    <form method="POST"
+          action="{% if produto %}/admin/produtos/{{ produto.id }}/editar{% else %}/admin/produtos/novo{% endif %}"
+          enctype="multipart/form-data"
+          class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 space-y-6">
+
+        <!-- Nome -->
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+                Nome <span class="text-red-500">*</span>
+            </label>
+            <input type="text" name="nome" required
+                   value="{{ produto.nome if produto else '' }}"
+                   placeholder="Nome do produto"
+                   class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-amber-400 transition">
+        </div>
+
+        <!-- Descrição -->
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+            <textarea name="descricao" rows="4"
+                      placeholder="Descreva o produto..."
+                      class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-amber-400 transition resize-none">{{ produto.descricao if produto else '' }}</textarea>
+        </div>
+
+        <!-- Categoria e Ordem -->
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
+                <input type="text" name="categoria"
+                       value="{{ produto.categoria if produto else '' }}"
+                       placeholder="Ex: Pendentes, Spots..."
+                       class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-amber-400 transition">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Ordem</label>
+                <input type="number" name="ordem" min="0"
+                       value="{{ produto.ordem if produto else 0 }}"
+                       class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-amber-400 transition">
+            </div>
+        </div>
+
+        <!-- Preço -->
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Preço (R$)</label>
+            <input type="text" name="preco"
+                   value="{{ '%.2f'|format(produto.preco) if produto and produto.preco else '' }}"
+                   placeholder="0,00 (deixe vazio para não exibir)"
+                   class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-amber-400 transition">
+        </div>
+
+        <!-- Checkboxes -->
+        <div class="flex flex-col gap-3">
+            <label class="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" name="mostrar_preco" value="true"
+                       {% if produto and produto.mostrar_preco %}checked{% elif not produto %}checked{% endif %}
+                       class="w-4 h-4 text-amber-500 border-gray-300 rounded focus:ring-amber-400">
+                <span class="text-sm text-gray-700">Exibir preço no site</span>
+            </label>
+            <label class="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" name="ativo" value="true"
+                       {% if produto and produto.ativo %}checked{% elif not produto %}checked{% endif %}
+                       class="w-4 h-4 text-amber-500 border-gray-300 rounded focus:ring-amber-400">
+                <span class="text-sm text-gray-700">Produto ativo (visível no site)</span>
+            </label>
+        </div>
+
+        <!-- Upload de imagem -->
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+                Imagem do produto
+            </label>
+            {% if produto and produto.imagem_path %}
+            <div class="mb-3 flex items-center gap-4">
+                <img src="/uploads/{{ produto.imagem_path }}"
+                     alt="Imagem atual"
+                     class="w-20 h-20 object-cover rounded-lg border border-gray-200">
+                <p class="text-xs text-gray-400">Imagem atual. Selecione um novo arquivo para substituir.</p>
+            </div>
+            {% endif %}
+            <input type="file" name="imagem" accept=".jpg,.jpeg,.png,.webp"
+                   class="w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 transition">
+            <p class="text-xs text-gray-400 mt-1">Formatos aceitos: JPG, PNG, WebP. Máx. 5MB.</p>
+        </div>
+
+        <!-- Botões -->
+        <div class="flex justify-end gap-3 pt-2">
+            <a href="/admin/produtos"
+               class="border border-gray-200 text-gray-600 hover:bg-gray-50 font-medium px-6 py-2.5 rounded-lg transition-colors text-sm">
+                Cancelar
+            </a>
+            <button type="submit"
+                    class="bg-amber-500 hover:bg-amber-600 text-white font-medium px-6 py-2.5 rounded-lg transition-colors text-sm">
+                {% if produto %}Salvar Alterações{% else %}Criar Produto{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

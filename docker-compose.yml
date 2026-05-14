@@ -1,0 +1,48 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8002:8000"
+    mem_limit: 256m
+    cpus: 0.5
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /home/bruno/Documentos/Github/carvalhaesiluminacao:/project
+      - uploads:/app/uploads
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    mem_limit: 128m
+    cpus: 0.3
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: carvalhaesiluminacao
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d carvalhaesiluminacao"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    mem_limit: 64m
+    cpus: 0.1
+    command: tunnel --no-autoupdate run
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - app
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  uploads:
