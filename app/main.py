@@ -85,8 +85,7 @@ def index(request: Request):
         )
     finally:
         db.close()
-    return templates.TemplateResponse("index.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "index.html", {
         "destaques": destaques,
     })
 

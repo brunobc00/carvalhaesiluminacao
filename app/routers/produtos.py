@@ -26,8 +26,7 @@ def lista_produtos(
     ).distinct().all()
     categorias = [c[0] for c in categorias if c[0]]
 
-    return templates.TemplateResponse("produtos.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "produtos.html", {
         "produtos": produtos,
         "categorias": categorias,
         "categoria_ativa": categoria,
@@ -43,7 +42,6 @@ def detalhe_produto(slug: str, request: Request, db: Session = Depends(get_db)):
     ).first()
     if not produto:
         raise HTTPException(status_code=404, detail="Produto nao encontrado")
-    return templates.TemplateResponse("produto_detalhe.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "produto_detalhe.html", {
         "produto": produto,
     })

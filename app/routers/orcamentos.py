@@ -10,7 +10,7 @@ router = APIRouter(tags=["orcamentos"])
 
 @router.get("/orcamento")
 def formulario_orcamento(request: Request):
-    return templates.TemplateResponse("orcamento.html", {"request": request})
+    return templates.TemplateResponse(request, "orcamento.html", {})
 
 
 @router.post("/orcamento")
@@ -36,4 +36,4 @@ def enviar_orcamento(
 
 @router.get("/orcamento/sucesso")
 def orcamento_sucesso(request: Request):
-    return templates.TemplateResponse("orcamento_sucesso.html", {"request": request})
+    return templates.TemplateResponse(request, "orcamento_sucesso.html", {})

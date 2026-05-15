@@ -26,7 +26,7 @@ ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 
 @router.get("/login")
 def login_page(request: Request):
-    return templates.TemplateResponse("admin/login.html", {"request": request, "erro": None})
+    return templates.TemplateResponse(request, "admin/login.html", {"erro": None})
 
 
 @router.post("/login")
@@ -38,8 +38,7 @@ def login(
 ):
     user = db.query(AdminUser).filter(AdminUser.username == username).first()
     if not user or not bcrypt.checkpw(senha.encode(), user.senha_hash.encode()):
-        return templates.TemplateResponse("admin/login.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "admin/login.html", {
             "erro": "Usuário ou senha inválidos."
         })
     token = create_session_cookie(username)
@@ -68,8 +67,7 @@ def dashboard(
     total_produtos = db.query(Produto).count()
     total_orcamentos = db.query(Orcamento).count()
     novos = db.query(Orcamento).filter(Orcamento.status == "novo").count()
-    return templates.TemplateResponse("admin/dashboard.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "admin/dashboard.html", {
         "admin": admin,
         "total_produtos": total_produtos,
         "total_orcamentos": total_orcamentos,
@@ -88,8 +86,7 @@ def admin_lista_produtos(
     admin: str = Depends(require_admin)
 ):
     produtos = db.query(Produto).order_by(Produto.ordem, Produto.id).all()
-    return templates.TemplateResponse("admin/produtos_lista.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "admin/produtos_lista.html", {
         "admin": admin,
         "produtos": produtos,
     })
@@ -97,8 +94,7 @@ def admin_lista_produtos(
 
 @router.get("/produtos/novo")
 def novo_produto_form(request: Request, admin: str = Depends(require_admin)):
-    return templates.TemplateResponse("admin/produto_form.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "admin/produto_form.html", {
         "admin": admin,
         "produto": None,
         "erro": None,
@@ -149,8 +145,7 @@ def editar_produto_form(
     produto = db.query(Produto).get(produto_id)
     if not produto:
         raise HTTPException(status_code=404, detail="Produto nao encontrado")
-    return templates.TemplateResponse("admin/produto_form.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "admin/produto_form.html", {
         "admin": admin,
         "produto": produto,
         "erro": None,
@@ -226,8 +221,7 @@ def admin_lista_orcamentos(
     if status:
         query = query.filter(Orcamento.status == status)
     orcamentos = query.all()
-    return templates.TemplateResponse("admin/orcamentos_lista.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "admin/orcamentos_lista.html", {
         "admin": admin,
         "orcamentos": orcamentos,
         "status_ativo": status,
