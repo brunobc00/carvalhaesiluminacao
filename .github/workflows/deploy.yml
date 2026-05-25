@@ -1,0 +1,20 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    timeout-minutes: 15
+
+    steps:
+      - name: Build and restart
+        env:
+          DOCKER_BUILDKIT: "0"
+        run: |
+          cd /home/bruno/Documentos/Github/carvalhaesiluminacao
+          git fetch origin main
+          git reset --hard origin/main
+          docker compose up -d --build
