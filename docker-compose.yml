@@ -12,7 +12,10 @@ services:
     cpus: 0.5
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - /home/bruno/Documentos/Github/carvalhaesiluminacao:/project
+      # Deploy canônico via docker-migration/deploy.sh (rsync deste PC → servidor).
+      # /project aponta para a raiz de deploy no servidor (não mais para a antiga
+      # cópia rsync /home/bruno/Documentos/Github, que foi removida).
+      - /home/bruno-server/docker/carvalhaesiluminacao:/project
       - uploads:/app/uploads
     env_file: .env
     networks:
