@@ -1,10 +1,21 @@
 # CLAUDE.md — Carvalhaes Iluminação
 
+> **Repositório:** `com.automacaobbc.carvalhaesiluminacao` (renomeado de `carvalhaesiluminacao` em jun/2026, preservando histórico). Pasta de deploy no servidor: `/home/bruno-server/docker/com.automacaobbc.carvalhaesiluminacao`.
+>
+> **Acesso:** o domínio `carvalhaesiluminacao.automacaobbc.com` está atrás do **Cloudflare Zero Trust** — só `bbittarc@gmail.com` e `marcelocarvalhaes@gmail.com` entram. Funciona como workspace privado de orçamentos da Carvalhaes.
+
 ## O que é este projeto
 
-Site institucional e de catálogo de produtos para a **Carvalhaes Iluminação**.
-Permite exibir luminárias com fotos, categorias e preços, receber solicitações de orçamento
-e gerenciar tudo via painel administrativo protegido por senha.
+Site/painel da **Carvalhaes Iluminação**: catálogo de produtos + **workspace de orçamentos**
+(migrado de `com.automacaobbc.ia` em jun/2026). Tudo atrás do Zero Trust + login admin por senha.
+
+### Módulo de orçamentos (migrado do ia)
+- **Gerador de Orçamentos** (`/admin/orcamento`): planilha (Google Sheets via OAuth, ou colar texto) → itens → PDF. Backend: `routers/sheets.py` + `routers/orcamento_gen.py`; PDF via `scripts/gerar_orcamento.py` (WeasyPrint), com `assets/`, `templates/orcamento.css` e `dados_empresa.json`.
+- **Fornecedores** (`/admin/fornecedores`): CRUD de fornecedores + upload/processamento de tabelas de preço (`routers/fornecedores.py`). Parsing por pandas/pdfplumber; fallback de visão via Ollama no host (`host.docker.internal:11434`).
+- **Catálogo** (`/admin/catalogo`): busca no catálogo de produtos extraídos das tabelas.
+- Modelos: `Fornecedor`, `TabelaPreco`, `ProdutoTabela`, `GoogleToken` em `app/models.py`.
+- Shim de auth/deps: `app/orcamento_deps.py` (mapeia o antigo `deps.require_page` → `auth.require_admin`).
+- **Google OAuth (modo Link):** usa o OAuth client do projeto GCP do ia; o redirect_uri `https://carvalhaesiluminacao.automacaobbc.com/api/auth/google/callback` precisa estar cadastrado no console do Google.
 
 ## Stack utilizada
 

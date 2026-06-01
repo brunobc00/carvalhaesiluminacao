@@ -1,0 +1,189 @@
+/* Carvalhaes Comercial — Estilo para Orçamentos em PDF */
+/* Cores da marca: Azul #0054A6 | Vermelho #E30613 */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap');
+
+body {
+  font-family: 'Outfit', sans-serif;
+  font-size: 10px;
+  color: #333333;
+  line-height: 1.5;
+  margin: 0;
+  padding: 0;
+}
+
+/* HEADER COM LOGO */
+.header-container {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #DCE6F2;
+  padding-bottom: 10px;
+}
+
+.header-logo img {
+  height: 60px; /* Ajuste conforme necessário */
+  width: auto;
+}
+
+/* TÍTULO PRINCIPAL (ORÇAMENTO) */
+h1 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0054A6;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 5px;
+  border-bottom: 2px solid #0054A6;
+  display: inline-block;
+  padding-bottom: 2px;
+}
+
+/* SUBTÍTULOS E SEÇÕES */
+h2 {
+  font-size: 12px;
+  font-weight: 600;
+  color: #0054A6;
+  text-transform: uppercase;
+  margin-top: 20px;
+  margin-bottom: 8px;
+  border-left: 4px solid #0054A6;
+  padding-left: 8px;
+  background-color: #F0F4F8; /* Fundo azul claro para destaque */
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+h3 {
+  font-size: 11px;
+  font-weight: 600;
+  color: #0054A6;
+  margin-top: 15px;
+  margin-bottom: 5px;
+}
+
+/* DADOS DO CLIENTE / EMPRESA */
+blockquote {
+  border: 1px solid #DCE6F2;
+  background-color: #F8FAFD;
+  margin: 10px 0;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+blockquote p {
+  margin: 2px 0;
+  font-size: 9.5px;
+  color: #0054A6; /* Texto em azul escuro */
+}
+
+/* TABELAS DE PRODUTOS/SERVIÇOS */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 15px 0;
+}
+
+thead tr {
+  background-color: #0054A6;
+  color: #FFFFFF;
+}
+
+thead th {
+  padding: 8px;
+  text-align: left;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 9px;
+}
+
+tbody tr:nth-child(even) {
+  background-color: #F8FAFD;
+}
+
+tbody td {
+  padding: 7px 8px;
+  border-bottom: 1px solid #DCE6F2;
+}
+
+/* Linha grossa para mudança de ambiente */
+tr.new-ambiente td {
+  border-top: 2px solid #0054A6 !important;
+}
+
+/* ASSINATURAS */
+.signature-table {
+  width: 100%;
+  margin-top: 40px;
+}
+
+.signature-line {
+  border-top: 1.5px solid #0054A6;
+  width: 90%;
+  margin: 0 auto;
+  padding-top: 5px;
+  text-align: center;
+  font-size: 9px;
+  font-weight: 600;
+  color: #0054A6;
+}
+
+/* TOTALIZADORES */
+.total-row {
+  font-weight: 700;
+  font-size: 11px;
+  color: #0054A6;
+  text-align: right;
+  padding-top: 10px;
+}
+
+/* IMAGENS NO FINAL DO PDF */
+.gallery {
+  margin-top: 30px;
+  page-break-before: always;
+}
+
+.gallery h2 {
+  text-align: center;
+  border: none;
+  padding: 0;
+}
+
+.gallery-item {
+  display: inline-block;
+  width: 48%;
+  margin: 1%;
+  text-align: center;
+}
+
+.gallery-item img {
+  max-width: 100%;
+  border: 1px solid #DDD;
+  border-radius: 4px;
+}
+
+/* CONFIGURAÇÃO DE PÁGINA */
+@page {
+  margin: 1.5cm 2cm;
+  size: A4;
+  
+  @top-left {
+    content: "CARVALHAES COMERCIO E SERVICOS";
+    font-size: 8px;
+    color: #999;
+  }
+
+  @bottom-center {
+    content: "Rua Coronel Otavio Meyer, 160, Loja 105 - Centro - Pouso Alegre/MG | (35) 9 9961-6010";
+    font-size: 7.5px;
+    color: #888;
+    border-top: 0.5pt solid #DDD;
+    padding-top: 5px;
+  }
+
+  @bottom-right {
+    content: "Página " counter(page) " de " counter(pages);
+    font-size: 8px;
+    color: #999;
+  }
+}

@@ -1,0 +1,181 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Catálogo{% endblock %}
+{% block page_title %}Catálogo de Produtos{% endblock %}
+{% block nav_catalogo %}bg-amber-500 text-white{% endblock %}
+
+{% block content %}
+<style>
+/* ── Tema escuro escopado (portado do SPA Antigravity Hub) ──────────── */
+#cat-root {
+    --bg-color: #0a0f0d;
+    --card-bg: rgba(255, 255, 255, 0.03);
+    --border-color: rgba(255, 255, 255, 0.1);
+    --accent-color: #1fff8c;
+    --text-primary: #e0e0e0;
+    --text-secondary: #a0a0a0;
+    background: var(--bg-color);
+    color: var(--text-primary);
+    border-radius: 16px;
+    padding: 1.8rem;
+    font-family: 'Inter', system-ui, sans-serif;
+}
+#cat-root h1 { color: var(--text-primary); font-size: 1.6rem; margin-bottom: 0.4rem; }
+#cat-root .subtitle { color: var(--text-secondary); font-size: 0.9rem; }
+#cat-root header { margin-bottom: 1.5rem; }
+#cat-root table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+#cat-root thead th { text-align: left; padding: 0.6rem 0.8rem; color: var(--accent-color); border-bottom: 1px solid var(--border-color); font-size: 0.73rem; text-transform: uppercase; letter-spacing: 0.5px; background: #0b1510; position: sticky; top: 0; z-index: 2; }
+#cat-root tbody td { padding: 0.55rem 0.8rem; color: var(--text-secondary); border-bottom: 1px solid rgba(255,255,255,0.04); }
+#cat-root tbody tr:hover td { background: rgba(255,255,255,0.02); }
+.table-wrapper { overflow: auto; max-height: calc(100vh - 320px); }
+
+.cat-toolbar{display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:1rem;align-items:center}
+.forn-search{flex:1;min-width:220px;background:var(--card-bg);border:1px solid var(--border-color);color:var(--text-primary);padding:.55rem .9rem;border-radius:8px;font-size:.9rem}
+.forn-search:focus{outline:none;border-color:var(--accent-color)}
+.btn-secondary{background:transparent;color:var(--text-secondary);border:1px solid var(--border-color);padding:.5rem .9rem;border-radius:8px;font-size:.85rem;cursor:pointer}
+.btn-secondary:hover{border-color:var(--accent-color);color:var(--accent-color)}
+.td-code{font-family:'Fira Code',monospace;font-size:.78rem;color:var(--text-secondary)}
+.td-money{text-align:right;font-family:'Fira Code',monospace;font-size:.82rem}
+.td-r{text-align:right;font-size:.82rem}
+.prod-generica{background:transparent;border:none;border-bottom:1px dashed rgba(255,255,255,.18);color:var(--text-secondary);font-size:.83rem;width:100%;padding:.1rem .2rem;cursor:text;font-family:inherit}
+.prod-generica:focus{outline:none;border-bottom-color:var(--accent-color);color:var(--text-primary)}
+.toast-container{position:fixed;bottom:2rem;right:2rem;z-index:9999;display:flex;flex-direction:column;gap:.5rem}
+.toast{padding:.8rem 1.4rem;border-radius:10px;font-size:.85rem;font-weight:600;backdrop-filter:blur(10px)}
+.toast-success{background:rgba(31,255,140,.15);border:1px solid rgba(31,255,140,.4);color:#1fff8c}
+.toast-error{background:rgba(255,80,80,.15);border:1px solid rgba(255,80,80,.4);color:#ff5050}
+</style>
+
+<div id="cat-root">
+    <header>
+        <h1>Catálogo de Produtos</h1>
+        <p class="subtitle" id="cat-subtitulo">Todos os fornecedores</p>
+    </header>
+
+    <div class="cat-toolbar">
+        <input class="forn-search" id="cat-busca"
+               placeholder="Buscar por código, descrição ou desc. genérica..."
+               oninput="catFiltrar()">
+        <button class="btn-secondary" style="font-size:.82rem;padding:.3rem .75rem;white-space:nowrap;" onclick="catCopiarDebug()">📋 Copiar JSON</button>
+    </div>
+
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Descrição</th>
+                    <th>Desc. Genérica</th>
+                    <th>Linha / Obs.</th>
+                    <th>Un.</th>
+                    <th class="td-r">Base</th>
+                    <th class="td-r">c/ Desc.</th>
+                    <th class="td-r">IPI%</th>
+                    <th class="td-r">ST%</th>
+                    <th class="td-r" style="color:var(--accent-color);">Custo</th>
+                </tr>
+            </thead>
+            <tbody id="cat-tbody">
+                <tr><td colspan="10" style="text-align:center;color:var(--text-secondary);">Carregando...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+const toastContainer = document.getElementById('toast-container');
+function showToast(msg, type = 'success') {
+    const t = document.createElement('div');
+    t.className = `toast toast-${type}`;
+    t.textContent = msg;
+    toastContainer.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+}
+
+async function apiFetch(url, options = {}) {
+    options.credentials = 'same-origin';
+    let r;
+    try { r = await fetch(url, options); }
+    catch(e) { throw new Error(`Falha de rede ao acessar ${url}: ${e.message}`); }
+    if (!r.ok) {
+        let detail = '';
+        try { detail = (await r.json()).detail || ''; } catch {}
+        throw new Error(`HTTP ${r.status} ${r.statusText}${detail ? ' — ' + detail : ''} [${url}]`);
+    }
+    return r.json();
+}
+
+function fmtBRL(v) {
+    if (v == null) return '—';
+    return 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+let _catRows = [];
+
+async function catLoad() {
+    document.getElementById('cat-tbody').innerHTML =
+        '<tr><td colspan="10" style="text-align:center;color:var(--text-secondary);">Carregando...</td></tr>';
+    try {
+        _catRows = await apiFetch('/api/produtos');
+        document.getElementById('cat-subtitulo').textContent =
+            `Todos os fornecedores — ${_catRows.length} produto(s)`;
+        catFiltrar();
+    } catch(e) {
+        document.getElementById('cat-tbody').innerHTML =
+            `<tr><td colspan="10" style="color:#ff5050;font-size:.83rem;">${esc(e.message)}</td></tr>`;
+    }
+}
+
+function catFiltrar() {
+    const q = (document.getElementById('cat-busca').value||'').toLowerCase();
+    const rows = q ? _catRows.filter(p =>
+        (p.codigo||'').toLowerCase().includes(q) ||
+        (p.descricao||'').toLowerCase().includes(q) ||
+        (p.descricao_generica||'').toLowerCase().includes(q)
+    ) : _catRows;
+    catRender(rows);
+}
+
+function catRender(rows) {
+    const tbody = document.getElementById('cat-tbody');
+    if (!rows.length) { tbody.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--text-secondary);">Nenhum produto.</td></tr>'; return; }
+    tbody.innerHTML = rows.map(p => `
+        <tr>
+            <td class="td-code">${esc(p.codigo||'—')}${p.ncm?`<br><span style="font-size:.67rem;opacity:.4;">${esc(p.ncm)}</span>`:''}</td>
+            <td style="font-size:.83rem;max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${esc(p.descricao||'')}">${esc(p.descricao||'')}</td>
+            <td style="min-width:120px;"><input class="prod-generica" value="${esc(p.descricao_generica||'')}" placeholder="—" data-id="${p.id}" onchange="catSalvarGenerica(${p.id},this.value)"></td>
+            <td style="font-size:.78rem;max-width:160px;color:var(--text-secondary);" title="${esc((p.linha_produto||'')+(p.observacao?'\n'+p.observacao:''))}">
+                ${p.linha_produto ? `<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(p.linha_produto)}</div>` : ''}
+                ${p.observacao ? `<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--accent-color);font-size:.72rem;">${esc(p.observacao)}</div>` : ''}
+                ${!p.linha_produto && !p.observacao ? '—' : ''}
+            </td>
+            <td style="font-size:.82rem;">${esc(p.unidade||'—')}</td>
+            <td class="td-money">${fmtBRL(p.preco_base)}</td>
+            <td class="td-money">${fmtBRL(p.preco_desconto)}</td>
+            <td class="td-r">${p.ipi??'—'}</td>
+            <td class="td-r">${p.st??'—'}</td>
+            <td class="td-money" style="color:var(--accent-color);font-weight:600;">${fmtBRL(p.preco_custo)}</td>
+        </tr>`).join('');
+}
+
+async function catSalvarGenerica(id, val) {
+    try {
+        await fetch('/api/produtos/bulk-generica',{method:'PATCH',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({ids:[id],descricao_generica:val})});
+        const p=_catRows.find(r=>r.id===id);
+        if(p) p.descricao_generica=val;
+    } catch(e) { showToast('Erro ao salvar: '+e.message,'error'); }
+}
+
+function catCopiarDebug() {
+    if (!_catRows || !_catRows.length) { showToast('Nenhum dado carregado', 'error'); return; }
+    const txt = JSON.stringify(_catRows, null, 2);
+    navigator.clipboard.writeText(txt)
+        .then(() => showToast(`JSON copiado — ${_catRows.length} produto(s)`, 'success'))
+        .catch(() => { prompt('Copie o JSON abaixo:', txt); });
+}
+
+document.addEventListener('DOMContentLoaded', () => { catLoad(); });
+</script>
+{% endblock %}

@@ -1,0 +1,18 @@
+{
+    "razao_social": "MARCELO COSTA CARVALHAES & CIA LTDA - ME",
+    "nome_fantasia": "CARVALHAES COMERCIO E SERVICOS",
+    "cnpj": "07.224.007/0001-36",
+    "inscricao_estadual": "5252077880031",
+    "contato": {
+        "telefone": "(35) 9 9961-6010",
+        "email": "carvalhaesiluminacao2@gmail.com"
+    },
+    "endereco": {
+        "logradouro": "Rua Coronel Otavio Meyer, 160, Loja 105",
+        "bairro": "Centro",
+        "cidade": "Pouso Alegre",
+        "estado": "MG",
+        "cep": "37550-061",
+        "complemento": "PA SHOPPING LOJA 105"
+    }
+}

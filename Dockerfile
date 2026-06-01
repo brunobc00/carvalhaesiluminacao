@@ -1,11 +1,18 @@
 FROM python:3.11-slim
 
-# Install dependencies for Docker CLI
+# Install dependencies for Docker CLI + WeasyPrint (geração de PDF de orçamento)
 RUN apt-get update && apt-get install -y \
     curl \
     gnupg \
     lsb-release \
     ca-certificates \
+    libpango-1.0-0 \
+    libpangoft2-1.0-0 \
+    libgdk-pixbuf-2.0-0 \
+    libffi-dev \
+    shared-mime-info \
+    fonts-liberation \
+    postgresql-client \
     && install -m 0755 -d /etc/apt/keyrings \
     && curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc \
     && chmod a+r /etc/apt/keyrings/docker.asc \

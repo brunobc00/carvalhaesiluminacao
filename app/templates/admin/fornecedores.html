@@ -1,0 +1,1079 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Fornecedores{% endblock %}
+{% block page_title %}Fornecedores{% endblock %}
+{% block nav_fornecedores %}bg-amber-500 text-white{% endblock %}
+
+{% block content %}
+<style>
+/* ── Tema escuro escopado (portado do SPA Antigravity Hub) ──────────── */
+#forn-root {
+    --bg-color: #0a0f0d;
+    --card-bg: rgba(255, 255, 255, 0.03);
+    --border-color: rgba(255, 255, 255, 0.1);
+    --accent-color: #1fff8c;
+    --text-primary: #e0e0e0;
+    --text-secondary: #a0a0a0;
+    --sidebar-width: 0px;
+    background: var(--bg-color);
+    color: var(--text-primary);
+    border-radius: 16px;
+    padding: 1.8rem;
+    font-family: 'Inter', system-ui, sans-serif;
+    position: relative;
+}
+#forn-root h1 { color: var(--text-primary); font-size: 1.6rem; margin-bottom: 0.4rem; }
+#forn-root .subtitle { color: var(--text-secondary); font-size: 0.9rem; }
+#forn-root .fp { display: none; }
+#forn-root .fp.active { display: block; }
+#forn-root header { margin-bottom: 1.5rem; }
+
+#forn-root table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+#forn-root thead th { text-align: left; padding: 0.6rem 0.8rem; color: var(--accent-color); border-bottom: 1px solid var(--border-color); font-size: 0.73rem; text-transform: uppercase; letter-spacing: 0.5px; background: #0b1510; }
+#forn-root tbody td { padding: 0.55rem 0.8rem; color: var(--text-secondary); border-bottom: 1px solid rgba(255,255,255,0.04); }
+#forn-root tbody tr:hover td { background: rgba(255,255,255,0.02); }
+#forn-root tbody td a { color: var(--accent-color); text-decoration: none; }
+.table-wrapper { overflow: auto; }
+
+.forn-toolbar{display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:1.5rem;align-items:center}
+.forn-search{flex:1;min-width:180px;background:var(--card-bg);border:1px solid var(--border-color);color:var(--text-primary);padding:.55rem .9rem;border-radius:8px;font-size:.9rem}
+.forn-search:focus{outline:none;border-color:var(--accent-color)}
+.btn-primary{background:var(--accent-color);color:#0a0f0d;border:none;padding:.55rem 1.2rem;border-radius:8px;font-weight:700;font-size:.88rem;cursor:pointer}
+.btn-primary:hover{opacity:.85}
+.btn-secondary{background:transparent;color:var(--text-secondary);border:1px solid var(--border-color);padding:.5rem .9rem;border-radius:8px;font-size:.85rem;cursor:pointer;text-decoration:none;display:inline-block}
+.btn-secondary:hover{border-color:var(--accent-color);color:var(--accent-color)}
+.btn-danger{background:transparent;color:#ff5050;border:1px solid rgba(255,80,80,.3);padding:.5rem .9rem;border-radius:8px;font-size:.85rem;cursor:pointer}
+.btn-danger:hover{background:rgba(255,80,80,.08)}
+.tabs{display:flex;gap:.3rem;margin-bottom:1.5rem;border-bottom:1px solid var(--border-color)}
+.tab-btn{background:none;border:none;color:var(--text-secondary);padding:.6rem 1.1rem;cursor:pointer;font-size:.9rem;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s}
+.tab-btn.active{color:var(--accent-color);border-bottom-color:var(--accent-color)}
+.forn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem}
+.forn-card{background:var(--card-bg);border:1px solid var(--border-color);border-radius:12px;padding:1.2rem 1.4rem;cursor:pointer;transition:border-color .15s,transform .1s}
+.forn-card:hover{border-color:var(--accent-color);transform:translateY(-2px)}
+.forn-card-nome{font-weight:600;font-size:1rem;color:var(--text-primary);margin-bottom:.4rem}
+.forn-card-meta{font-size:.8rem;color:var(--text-secondary);display:flex;gap:.8rem;flex-wrap:wrap}
+.breadcrumb{display:flex;align-items:center;gap:.4rem;font-size:.85rem;color:var(--text-secondary);margin-bottom:1.5rem;flex-wrap:wrap}
+.breadcrumb a{color:var(--accent-color);cursor:pointer;text-decoration:none}
+.breadcrumb a:hover{text-decoration:underline}
+.page-actions{display:flex;gap:.5rem;flex-wrap:wrap}
+.info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:.8rem;margin:1.5rem 0}
+.info-card{background:var(--card-bg);border:1px solid var(--border-color);border-radius:8px;padding:.9rem 1rem}
+.info-card-label{font-size:.72rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.3rem}
+.info-card-value{font-size:.9rem;color:var(--text-primary);font-weight:500;word-break:break-word}
+.chip{display:inline-block;padding:.2rem .55rem;border-radius:5px;font-size:.73rem;font-weight:700}
+.chip-ok{background:rgba(31,255,140,.12);color:#1fff8c}
+.chip-wait{background:rgba(255,200,0,.12);color:#ffc800}
+.chip-proc{background:rgba(100,150,255,.12);color:#6496ff}
+.chip-err{background:rgba(255,80,80,.12);color:#ff5050}
+.upload-zone{border:2px dashed var(--border-color);border-radius:12px;padding:2.5rem;text-align:center;color:var(--text-secondary);cursor:pointer;transition:border-color .15s,background .15s}
+.upload-zone:hover,.upload-zone.dragover{border-color:var(--accent-color);background:rgba(31,255,140,.04);color:var(--accent-color)}
+.upload-zone .uz-icon{font-size:2.2rem;margin-bottom:.5rem}
+.cond-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.8rem;margin:1.2rem 0}
+.cond-group{display:flex;flex-direction:column;gap:.3rem}
+.cond-input{background:var(--card-bg);border:1px solid var(--border-color);color:var(--text-primary);padding:.5rem .8rem;border-radius:8px;font-size:.9rem;width:100%}
+.cond-input:focus{outline:none;border-color:var(--accent-color)}
+.progress-bar{height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;background:var(--accent-color);transition:width .3s;border-radius:3px;width:0%}
+.progress-msg{margin-top:.6rem;font-size:.85rem;color:var(--text-secondary)}
+.tp-toolbar{display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:1rem;align-items:center}
+.bulk-bar{position:fixed;bottom:0;left:256px;right:0;background:#0e1a14;border-top:1px solid var(--accent-color);padding:.8rem 1.5rem;display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;z-index:200;transform:translateY(100%);transition:transform .2s}
+.bulk-bar.visible{transform:translateY(0)}
+.bulk-count{font-size:.85rem;color:var(--accent-color);font-weight:700;min-width:110px}
+.bulk-input{flex:1;min-width:160px;max-width:320px;background:rgba(255,255,255,.05);border:1px solid var(--border-color);color:var(--text-primary);padding:.45rem .8rem;border-radius:6px;font-size:.87rem}
+.bulk-input:focus{outline:none;border-color:var(--accent-color)}
+.prod-generica{background:transparent;border:none;border-bottom:1px dashed rgba(255,255,255,.18);color:var(--text-secondary);font-size:.83rem;width:100%;padding:.1rem .2rem;cursor:text;font-family:inherit}
+.prod-generica:focus{outline:none;border-bottom-color:var(--accent-color);color:var(--text-primary)}
+.td-code{font-family:'Fira Code',monospace;font-size:.78rem;color:var(--text-secondary)}
+.td-money{text-align:right;font-family:'Fira Code',monospace;font-size:.82rem}
+.td-r{text-align:right;font-size:.82rem}
+.tp-sel td{background:rgba(31,255,140,.04)!important}
+.rev-inp{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:4px;color:var(--text-primary);font-family:inherit;font-size:.82rem;padding:.2rem .4rem}
+.rev-inp:focus{outline:none;border-color:rgba(31,255,140,.5);background:rgba(31,255,140,.04)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:400;display:flex;align-items:center;justify-content:center;padding:1rem}
+.modal-box{background:#0e1a14;border:1px solid var(--border-color);border-radius:16px;padding:2rem;width:100%;max-width:560px;max-height:90vh;overflow-y:auto}
+.modal-title{font-size:1.15rem;font-weight:700;margin-bottom:1.5rem;color:var(--text-primary)}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:.8rem}
+.form-group{display:flex;flex-direction:column;gap:.3rem}
+.form-group.full{grid-column:1/-1}
+.form-label{font-size:.75rem;color:var(--text-secondary)}
+.form-input{background:rgba(255,255,255,.04);border:1px solid var(--border-color);color:var(--text-primary);padding:.55rem .8rem;border-radius:8px;font-size:.88rem}
+.form-input:focus{outline:none;border-color:var(--accent-color)}
+.modal-actions{display:flex;gap:.6rem;justify-content:flex-end;margin-top:1.5rem;flex-wrap:wrap}
+.section-title { font-size: 1.1rem; font-weight: 600; color: var(--text-primary); margin: 2.5rem 0 1rem; }
+.toast-container{position:fixed;bottom:2rem;right:2rem;z-index:9999;display:flex;flex-direction:column;gap:.5rem}
+.toast{padding:.8rem 1.4rem;border-radius:10px;font-size:.85rem;font-weight:600;backdrop-filter:blur(10px)}
+.toast-success{background:rgba(31,255,140,.15);border:1px solid rgba(31,255,140,.4);color:#1fff8c}
+.toast-error{background:rgba(255,80,80,.15);border:1px solid rgba(255,80,80,.4);color:#ff5050}
+.toast-info{background:rgba(100,160,255,.15);border:1px solid rgba(100,160,255,.4);color:#64a0ff}
+@media (max-width: 900px) {
+    .bulk-bar{left:0}
+    .forn-grid{grid-template-columns:1fr}
+    .info-grid{grid-template-columns:1fr 1fr}
+    .cond-grid{grid-template-columns:1fr 1fr}
+    .form-grid{grid-template-columns:1fr}
+}
+</style>
+
+<div id="forn-root">
+    <!-- ═══════════════════ LISTA DE FORNECEDORES ═══════════════════ -->
+    <section id="page-fornecedores" class="fp active">
+        <header>
+            <h1>Fornecedores</h1>
+            <p class="subtitle">Gerencie fornecedores e tabelas de preço da Carvalhaes.</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-btn active" id="tab-btn-forn" onclick="forSwitchTab('forn')">Fornecedores</button>
+            <button class="tab-btn" id="tab-btn-tabs" onclick="forSwitchTab('tabs')">Todas as Tabelas</button>
+        </div>
+
+        <div id="for-tab-forn">
+            <div class="forn-toolbar">
+                <input class="forn-search" id="for-busca" placeholder="Buscar fornecedor ou representante..." oninput="forFiltrar()">
+                <button class="btn-primary" onclick="forModalAbrir()">+ Novo Fornecedor</button>
+            </div>
+            <div class="forn-grid" id="for-cards">
+                <p style="color:var(--text-secondary);grid-column:1/-1;">Carregando...</p>
+            </div>
+        </div>
+
+        <div id="for-tab-tabs" style="display:none">
+            <div class="forn-toolbar">
+                <input class="forn-search" id="for-tab-busca" placeholder="Buscar tabela ou fornecedor..." oninput="forTabsFiltrar()">
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead><tr>
+                        <th>Fornecedor</th><th>Arquivo</th><th>Data</th>
+                        <th class="td-r">Desc.</th><th class="td-r">IPI</th><th class="td-r">ST</th>
+                        <th class="td-r">Produtos</th><th>Status</th>
+                    </tr></thead>
+                    <tbody id="for-tabs-tbody"><tr><td colspan="8" style="text-align:center;color:var(--text-secondary);">Selecione esta aba para carregar.</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════ FORNECEDOR DETALHE ═══════════════════ -->
+    <section id="page-fornecedor" class="fp">
+        <div class="breadcrumb">
+            <a onclick="showPage('fornecedores')">Fornecedores</a>
+            <span>/</span>
+            <span id="forn-breadcrumb">—</span>
+        </div>
+        <header style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;margin-bottom:0;">
+            <h1 id="forn-nome">—</h1>
+            <div class="page-actions">
+                <button class="btn-secondary" onclick="forModalAbrir('edit')">Editar</button>
+                <button class="btn-danger" onclick="forExcluir()">Excluir</button>
+            </div>
+        </header>
+
+        <div class="info-grid" id="forn-info-grid"></div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1.5rem;flex-wrap:wrap;gap:.5rem;">
+            <div class="section-title" style="margin:0;">Tabelas de Preço</div>
+            <button class="btn-primary" onclick="tabNovaTabela()">+ Nova Tabela</button>
+        </div>
+
+        <div class="table-wrapper" style="margin-top:1rem;">
+            <table>
+                <thead><tr>
+                    <th>Data</th><th>Arquivo</th>
+                    <th class="td-r">Desc.</th><th class="td-r">IPI</th><th class="td-r">ST</th>
+                    <th class="td-r">Produtos</th><th>Status</th><th></th>
+                </tr></thead>
+                <tbody id="forn-tabelas-tbody">
+                    <tr><td colspan="8" style="text-align:center;color:var(--text-secondary);">Nenhuma tabela.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ═══════════════════ TABELA PRODUTOS ═══════════════════ -->
+    <section id="page-tabela-produtos" class="fp" style="padding-bottom:4rem;">
+        <div class="breadcrumb" id="tp-breadcrumb"></div>
+        <header style="margin-bottom:1rem;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;">
+                <div>
+                    <h1 id="tp-titulo">Produtos</h1>
+                    <p class="subtitle" id="tp-subtitulo"></p>
+                </div>
+                <div style="display:flex;gap:.5rem;align-items:center;padding-top:.3rem;flex-wrap:wrap;">
+                    <a id="tp-btn-download" href="#" download
+                       class="btn-secondary" style="display:none;font-size:.85rem;text-decoration:none;">
+                        ⬇ Original
+                    </a>
+                    <button class="btn-primary" style="font-size:.85rem;" onclick="tabNovaTabela()">+ Nova Tabela</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- ── Formulário de upload (nova tabela) ── -->
+        <div id="tp-upload-form" style="display:none;margin-bottom:1.5rem;border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:1.25rem;">
+            <div class="upload-zone" id="upload-zone"
+                 onclick="document.getElementById('upload-file').click()"
+                 ondragover="event.preventDefault();this.classList.add('dragover')"
+                 ondragleave="this.classList.remove('dragover')"
+                 ondrop="uploadDrop(event)">
+                <div class="uz-icon">📄</div>
+                <div id="upload-zone-label">Clique ou arraste o arquivo aqui<br><small style="opacity:.6;">PDF, XLS, XLSX, TXT, JPG, PNG</small></div>
+            </div>
+            <input type="file" id="upload-file" hidden accept=".pdf,.xls,.xlsx,.txt,.jpg,.jpeg,.png" onchange="uploadFileSelected(this)">
+            <div class="section-title" style="margin-top:1.5rem;">Condições Fiscais</div>
+            <div class="cond-grid">
+                <div class="cond-group">
+                    <label class="form-label">Desconto (%)</label>
+                    <input class="cond-input" type="number" id="cond-desconto" value="0" step="0.01" min="0" max="100">
+                </div>
+                <div class="cond-group">
+                    <label class="form-label">IPI (%)</label>
+                    <input class="cond-input" type="number" id="cond-ipi" value="10" step="0.01" min="0">
+                </div>
+                <div class="cond-group">
+                    <label class="form-label">ICMS Entrada (%) — informativo</label>
+                    <input class="cond-input" type="number" id="cond-icms" value="4" step="0.01" min="0">
+                </div>
+                <div class="cond-group">
+                    <label class="form-label">ST/MG (%)</label>
+                    <input class="cond-input" type="number" id="cond-st" value="32" step="0.01" min="0">
+                </div>
+            </div>
+            <div style="display:flex;gap:.75rem;margin-top:1.25rem;flex-wrap:wrap;">
+                <button class="btn-primary" id="upload-btn" onclick="uploadIniciar()" disabled>Enviar e Processar</button>
+                <button class="btn-secondary" onclick="document.getElementById('tp-upload-form').style.display='none'">Cancelar</button>
+            </div>
+        </div>
+
+        <!-- ── Header de processamento ── -->
+        <div id="tp-proc-header" style="display:none;margin-bottom:1.5rem;background:rgba(31,255,140,.04);border:1px solid rgba(31,255,140,.14);border-radius:8px;padding:1rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;flex-wrap:wrap;gap:.5rem;">
+                <span id="tp-proc-arquivo" style="font-size:.85rem;opacity:.65;"></span>
+                <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+                    <button id="tp-btn-pausar" class="btn-secondary" style="padding:.3rem .75rem;font-size:.82rem;" onclick="tpPausar()">⏸ Pausar</button>
+                    <button id="tp-btn-continuar" class="btn-secondary" style="padding:.3rem .75rem;font-size:.82rem;display:none;" onclick="tpContinuar()">▶ Continuar</button>
+                    <button id="tp-btn-importar" class="btn-primary" style="padding:.3rem .75rem;font-size:.82rem;display:none;" onclick="tpImportar()">⬆ Importar para Banco</button>
+                    <button class="btn-secondary" style="padding:.3rem .75rem;font-size:.82rem;color:#ff6b6b;" onclick="cancelarProcessamento()">✕ Cancelar</button>
+                </div>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" id="tp-prog-fill"></div></div>
+            <div class="progress-msg" id="tp-prog-msg" style="margin-top:.4rem;font-size:.83rem;"></div>
+        </div>
+
+        <!-- ── Banner de revisão ── -->
+        <div id="tp-revisao-header" style="display:none;margin-bottom:1.5rem;background:rgba(255,196,0,.04);border:1px solid rgba(255,196,0,.22);border-radius:8px;padding:1rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem;">
+                <div>
+                    <div style="font-size:.88rem;font-weight:600;color:#ffc400;">Aguardando revisão</div>
+                    <div id="tp-revisao-msg" style="font-size:.82rem;opacity:.65;margin-top:.2rem;"></div>
+                </div>
+                <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+                    <button class="btn-secondary" style="font-size:.85rem;" onclick="tpJsonToggle()">{ } JSON</button>
+                    <button class="btn-primary" style="font-size:.85rem;" onclick="tpImportar()">⬆ Importar para Banco</button>
+                </div>
+            </div>
+            <div id="tp-json-panel" style="display:none;margin-top:1rem;">
+                <textarea id="tp-json-ta" style="width:100%;height:280px;background:rgba(0,0,0,.4);border:1px solid rgba(255,196,0,.2);border-radius:6px;color:var(--text-primary);font-family:'Fira Code',monospace;font-size:.78rem;padding:.75rem;resize:vertical;box-sizing:border-box;"></textarea>
+                <div style="display:flex;gap:.5rem;margin-top:.5rem;">
+                    <button class="btn-primary" style="font-size:.83rem;" onclick="tpJsonSalvar()">Salvar JSON</button>
+                    <button class="btn-secondary" style="font-size:.83rem;" onclick="tpJsonToggle()">Fechar</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="tp-toolbar">
+            <input class="forn-search" id="tp-busca" style="flex:1;min-width:200px;"
+                   placeholder="Buscar por código, descrição ou desc. genérica..."
+                   oninput="tpFiltrar()">
+            <button class="btn-secondary" style="font-size:.82rem;padding:.3rem .75rem;white-space:nowrap;" onclick="tpCopiarDebug()">📋 Copiar JSON</button>
+        </div>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:32px;"><input type="checkbox" id="tp-check-all" onchange="tpSelectAll(this.checked)"></th>
+                        <th>Código</th>
+                        <th>Descrição</th>
+                        <th id="th-col4">Desc. Genérica</th>
+                        <th id="th-col5">Observação</th>
+                        <th>Un.</th>
+                        <th class="td-r">Base</th>
+                        <th class="td-r">c/ Desc.</th>
+                        <th class="td-r">IPI%</th>
+                        <th class="td-r">ST%</th>
+                        <th class="td-r" style="color:var(--accent-color);">Custo</th>
+                    </tr>
+                </thead>
+                <tbody id="tp-tbody">
+                    <tr><td colspan="11" style="text-align:center;color:var(--text-secondary);">Nenhum produto.</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="bulk-bar" id="tp-bulk-bar">
+            <span class="bulk-count" id="tp-bulk-count">0 selecionados</span>
+            <input class="bulk-input" id="tp-bulk-generica" placeholder="Descrição genérica para todos...">
+            <button class="btn-primary" onclick="tpAplicarGenerica()" style="padding:.45rem 1rem;font-size:.85rem;">Aplicar</button>
+            <button class="btn-secondary" onclick="tpDeselectAll()" style="padding:.45rem .8rem;font-size:.85rem;">Cancelar</button>
+        </div>
+    </section>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+// ── Helpers locais (portado do SPA) ───────────────────────────────────
+const toastContainer = document.getElementById('toast-container');
+function showToast(msg, type = 'success') {
+    const t = document.createElement('div');
+    t.className = `toast toast-${type}`;
+    t.textContent = msg;
+    toastContainer.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+}
+
+// showPage local: alterna entre as 3 seções (sem SPA global)
+function showPage(pageId) {
+    if (pageId === 'fornecedor' && !_forAtual) {
+        showPage('fornecedores');
+        forLoad();
+        return;
+    }
+    document.querySelectorAll('#forn-root .fp').forEach(el => el.classList.remove('active'));
+    const el = document.getElementById('page-' + pageId);
+    if (el) el.classList.add('active');
+    if (pageId === 'fornecedores') forLoad();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function apiFetch(url, options = {}) {
+    options.credentials = 'same-origin';
+    let r;
+    try { r = await fetch(url, options); }
+    catch(e) { throw new Error(`Falha de rede ao acessar ${url}: ${e.message}`); }
+    if (!r.ok) {
+        let detail = '';
+        try { detail = (await r.json()).detail || ''; } catch {}
+        throw new Error(`HTTP ${r.status} ${r.statusText}${detail ? ' — ' + detail : ''} [${url}]`);
+    }
+    return r.json();
+}
+
+function fmtBRL(v) {
+    if (v == null) return '—';
+    return 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function fmtChip(s) {
+    const m = {aguardando:['chip chip-wait','Aguardando'],processando:['chip chip-proc','Processando'],revisao:['chip chip-wait','Revisão'],processado:['chip chip-ok','Concluído'],erro:['chip chip-err','Erro']};
+    const [c,l] = m[s]||['chip',s||'—'];
+    return `<span class="${c}">${l}</span>`;
+}
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ── Estado ─────────────────────────────────────────────────────────────
+let _forList  = [];
+let _tabsList = [];
+let _forAtual = null;
+let _tpRows   = [];
+let _tpSel    = new Set();
+let _upFile   = null;
+let _upTabId  = null;
+let _tpModo   = 'normal';
+let _tpRevFid = null;
+let _tpRevParams = {desconto:0, ipi:0, st:0};
+
+// ── Fornecedores List ──────────────────────────────────────────────────
+function forSwitchTab(tab) {
+    document.getElementById('for-tab-forn').style.display = tab==='forn' ? '' : 'none';
+    document.getElementById('for-tab-tabs').style.display = tab==='tabs' ? '' : 'none';
+    document.getElementById('tab-btn-forn').classList.toggle('active', tab==='forn');
+    document.getElementById('tab-btn-tabs').classList.toggle('active', tab==='tabs');
+    if (tab==='tabs') forTabsLoad();
+}
+
+async function forLoad() {
+    document.getElementById('for-cards').innerHTML = '<p style="color:var(--text-secondary);grid-column:1/-1;">Carregando...</p>';
+    try {
+        _forList = await apiFetch('/api/fornecedores');
+        forRenderCards();
+    } catch(e) {
+        document.getElementById('for-cards').innerHTML =
+            `<div style="grid-column:1/-1;color:#ff5050;font-size:.85rem;">
+                <strong>Erro ao carregar fornecedores:</strong><br>${esc(e.message)}
+                <br><button class="btn-secondary" style="margin-top:.6rem;font-size:.8rem;" onclick="forLoad()">Tentar novamente</button>
+            </div>`;
+    }
+}
+
+function forFiltrar() { forRenderCards(); }
+
+function forRenderCards() {
+    const q = (document.getElementById('for-busca').value||'').toLowerCase();
+    const list = _forList.filter(f =>
+        f.nome.toLowerCase().includes(q) ||
+        (f.nome_representante||'').toLowerCase().includes(q)
+    );
+    const el = document.getElementById('for-cards');
+    if (!list.length) { el.innerHTML = '<p style="color:var(--text-secondary);grid-column:1/-1;">Nenhum fornecedor encontrado.</p>'; return; }
+    el.innerHTML = list.map(f => `
+        <div class="forn-card" onclick="forIr(${f.id})">
+            <div class="forn-card-nome">${esc(f.nome)}</div>
+            <div class="forn-card-meta">
+                ${f.nome_representante ? `<span>👤 ${esc(f.nome_representante)}</span>` : ''}
+                ${f.prazo_entrega ? `<span>🚚 ${f.prazo_entrega}d</span>` : ''}
+                ${f.compra_minima ? `<span>💰 mín. ${fmtBRL(f.compra_minima)}</span>` : ''}
+            </div>
+        </div>`).join('');
+}
+
+async function forTabsLoad() {
+    const tbody = document.getElementById('for-tabs-tbody');
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-secondary);">Carregando...</td></tr>';
+    try {
+        _tabsList = await apiFetch('/api/tabelas');
+        forTabsRender();
+    } catch(e) {
+        tbody.innerHTML = `<tr><td colspan="8" style="color:#ff5050;font-size:.83rem;">${esc(e.message)}</td></tr>`;
+    }
+}
+
+function forTabsFiltrar() { forTabsRender(); }
+
+function forTabsRender() {
+    const q = (document.getElementById('for-tab-busca').value||'').toLowerCase();
+    const list = _tabsList.filter(t =>
+        (t.fornecedor_nome||'').toLowerCase().includes(q) ||
+        (t.arquivo_nome||'').toLowerCase().includes(q)
+    );
+    const tbody = document.getElementById('for-tabs-tbody');
+    if (!list.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-secondary);">Nenhuma tabela.</td></tr>'; return; }
+    tbody.innerHTML = list.map(t => `
+        <tr style="cursor:pointer;" onclick="tabIrGlobal(${t.fornecedor_id},${t.id})">
+            <td>${esc(t.fornecedor_nome)}</td>
+            <td>${esc(t.arquivo_nome||'—')}</td>
+            <td>${(t.data_upload||'').substring(0,10)||'—'}</td>
+            <td class="td-r">${t.desconto}%</td>
+            <td class="td-r">${t.ipi}%</td>
+            <td class="td-r">${t.st}%</td>
+            <td class="td-r">${t.total_produtos}</td>
+            <td>${fmtChip(t.status)}</td>
+        </tr>`).join('');
+}
+
+// ── Fornecedor Detail ──────────────────────────────────────────────────
+async function forIr(id) {
+    try {
+        const [f, tabelas] = await Promise.all([
+            apiFetch('/api/fornecedores/'+id),
+            apiFetch('/api/fornecedores/'+id+'/tabelas'),
+        ]);
+        _forAtual = f;
+        fornRender();
+        fornTabelasRender(tabelas);
+        showPage('fornecedor');
+    } catch(e) { showToast(e.message, 'error'); }
+}
+
+function fornRender() {
+    const f = _forAtual;
+    document.getElementById('forn-breadcrumb').textContent = f.nome;
+    document.getElementById('forn-nome').textContent = f.nome;
+    const fields = [
+        ['Representante',   f.nome_representante],
+        ['WhatsApp',        f.whatsapp],
+        ['E-mail Cotação',  f.email_cotacao],
+        ['E-mail Pedido',   f.email_pedido],
+        ['Prazo de Entrega',f.prazo_entrega ? f.prazo_entrega+' dias' : null],
+        ['Compra Mínima',   f.compra_minima ? fmtBRL(f.compra_minima) : null],
+        ['Cond. Pagamento', f.cond_pagamento],
+    ].filter(([,v]) => v);
+    document.getElementById('forn-info-grid').innerHTML = fields.length
+        ? fields.map(([l,v]) => `<div class="info-card"><div class="info-card-label">${l}</div><div class="info-card-value">${esc(v)}</div></div>`).join('')
+        : '<p style="color:var(--text-secondary);font-size:.88rem;">Nenhuma informação adicional.</p>';
+}
+
+function fornTabelasRender(tabelas) {
+    const tbody = document.getElementById('forn-tabelas-tbody');
+    if (!tabelas.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-secondary);">Nenhuma tabela ainda.</td></tr>'; return; }
+    tbody.innerHTML = tabelas.map(t => {
+        const fid = _forAtual ? _forAtual.id : t.fornecedor_id;
+        let onclick = '';
+        if (t.status === 'processado' && t.total_produtos > 0)
+            onclick = `onclick="tabIrGlobal(${fid},${t.id})"`;
+        else if (t.status === 'revisao')
+            onclick = `onclick="tpAbrirRevisao(${fid},${t.id})"`;
+        else if (t.status === 'processando')
+            onclick = `onclick="tabIrProcessando(${fid},${t.id})"`;
+        else if (t.status === 'aguardando')
+            onclick = `onclick="tabProcessar(${t.id})"`;
+        return `
+        <tr style="cursor:pointer;" ${onclick}>
+            <td>${(t.data_upload||'').substring(0,10)||'—'}</td>
+            <td style="font-size:.83rem;">${esc(t.arquivo_nome||'—')}</td>
+            <td class="td-r">${t.desconto}%</td>
+            <td class="td-r">${t.ipi}%</td>
+            <td class="td-r">${t.st}%</td>
+            <td class="td-r">${t.total_produtos}</td>
+            <td>${fmtChip(t.status)}</td>
+            <td style="white-space:nowrap;" onclick="event.stopPropagation()">
+                <a href="/api/fornecedores/${fid}/tabelas/${t.id}/arquivo" title="Baixar original"
+                   style="font-size:.85rem;color:var(--text-secondary);text-decoration:none;margin-right:.4rem;"
+                   download>⬇</a>
+                ${t.status==='processado'&&t.total_produtos>0?`<button class="btn-secondary" style="padding:.3rem .6rem;font-size:.76rem;" onclick="tabIrGlobal(${fid},${t.id})">Ver</button>`:''}
+                ${t.status==='revisao'?`<button class="btn-primary" style="padding:.3rem .6rem;font-size:.76rem;" onclick="tpAbrirRevisao(${fid},${t.id})">Revisar</button>`:''}
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+// ── Upload ─────────────────────────────────────────────────────────────
+function uploadDrop(e) {
+    e.preventDefault();
+    document.getElementById('upload-zone').classList.remove('dragover');
+    const f = e.dataTransfer.files[0];
+    if (f) { _upFile = f; uploadSetFile(f); }
+}
+function uploadFileSelected(input) {
+    _upFile = input.files[0];
+    if (_upFile) uploadSetFile(_upFile);
+}
+function uploadSetFile(f) {
+    document.getElementById('upload-zone-label').innerHTML =
+        `<strong>${esc(f.name)}</strong><br><small style="opacity:.6;">${(f.size/1024).toFixed(0)} KB</small>`;
+    document.getElementById('upload-btn').disabled = false;
+}
+
+async function uploadIniciar() {
+    if (!_forAtual) {
+        showToast('Selecione um fornecedor primeiro.', 'error');
+        showPage('fornecedores');
+        return;
+    }
+    if (!_upFile) return;
+
+    document.getElementById('tp-upload-form').style.display = 'none';
+    document.getElementById('tp-proc-header').style.display = '';
+    document.getElementById('tp-proc-arquivo').textContent = _upFile.name;
+    document.getElementById('tp-prog-fill').style.width = '0%';
+    document.getElementById('tp-prog-msg').textContent = 'Enviando arquivo...';
+    document.getElementById('tp-btn-download').style.display = 'none';
+    document.getElementById('tp-btn-pausar').style.display = '';
+    document.getElementById('tp-btn-continuar').style.display = 'none';
+
+    document.getElementById('tp-breadcrumb').innerHTML =
+        `<a onclick="showPage('fornecedores')">Fornecedores</a><span>/</span><a onclick="showPage('fornecedor')">${esc(_forAtual.nome)}</a><span>/</span><span>Processando</span>`;
+    document.getElementById('tp-titulo').textContent = _upFile.name;
+    document.getElementById('tp-subtitulo').textContent = _forAtual.nome;
+
+    _tpRows = []; _tpSel = new Set();
+    tpFiltrar();
+
+    const fd = new FormData();
+    fd.append('arquivo', _upFile);
+    fd.append('desconto',     document.getElementById('cond-desconto').value);
+    fd.append('ipi',          document.getElementById('cond-ipi').value);
+    fd.append('icms_entrada', document.getElementById('cond-icms').value);
+    fd.append('st',           document.getElementById('cond-st').value);
+
+    let tabela;
+    try {
+        const r = await fetch('/api/fornecedores/'+_forAtual.id+'/tabelas', {method:'POST', body:fd, credentials:'same-origin'});
+        if (!r.ok) throw new Error((await r.json()).detail || r.status);
+        tabela = await r.json();
+        _upTabId = tabela.id;
+    } catch(e) {
+        document.getElementById('tp-prog-msg').textContent = 'Erro ao enviar: '+e.message;
+        document.getElementById('tp-upload-form').style.display = '';
+        document.getElementById('tp-proc-header').style.display = 'none';
+        return;
+    }
+    startPoll(_forAtual.id, tabela.id);
+}
+
+async function cancelarProcessamento() {
+    if (!_upTabId || !_forAtual) return;
+    if (!confirm('Cancelar processamento? A tabela e os produtos já salvos serão apagados.')) return;
+    if (_activePollTimer) { clearTimeout(_activePollTimer); _activePollTimer = null; }
+    try {
+        await fetch('/api/fornecedores/'+_forAtual.id+'/tabelas/'+_upTabId, {method:'DELETE', credentials:'same-origin'});
+        showToast('Tabela cancelada.');
+    } catch(_) {}
+    _upFile = null; _tpRows = []; _tpSel = new Set(); _upTabId = null;
+    document.getElementById('upload-file').value = '';
+    document.getElementById('upload-zone-label').innerHTML = 'Clique ou arraste o arquivo aqui<br><small style="opacity:.6;">PDF, XLS, XLSX, TXT, JPG, PNG</small>';
+    document.getElementById('upload-btn').disabled = true;
+    document.getElementById('tp-proc-header').style.display = 'none';
+    document.getElementById('tp-upload-form').style.display = 'none';
+    tpFiltrar();
+    showPage('fornecedor');
+}
+
+// ── Polling centralizado ───────────────────────────────────────────────
+let _activePollTimer = null;
+let _pollFid = null;
+let _pollOffset = 0;
+
+function startPoll(fid, tid, offset = 0) {
+    if (_activePollTimer) clearTimeout(_activePollTimer);
+    _upTabId = tid;
+    _pollFid = fid;
+    _pollOffset = offset;
+    document.getElementById('tp-proc-header').style.display = '';
+    document.getElementById('tp-btn-pausar').style.display = '';
+    document.getElementById('tp-btn-continuar').style.display = 'none';
+
+    const poll = async () => {
+        try {
+            const r = await fetch('/api/fornecedores/'+fid+'/tabelas/'+tid+'/progresso?offset='+_pollOffset, {credentials:'same-origin'});
+            const d = await r.json();
+            document.getElementById('tp-prog-fill').style.width = (d.percent||0)+'%';
+            document.getElementById('tp-prog-msg').textContent = d.msg||'';
+            if (d.rows && d.rows.length) {
+                for (const row of d.rows) { _tpRows.push(row); _pollOffset++; }
+                tpFiltrar();
+            }
+            if (d.error) {
+                document.getElementById('tp-prog-msg').textContent = 'Erro: '+d.error;
+                return;
+            }
+            if (d.done) { await tpAbrirRevisao(fid, tid); return; }
+            _activePollTimer = setTimeout(poll, 2000);
+        } catch(e) {
+            document.getElementById('tp-prog-msg').textContent = 'Erro: '+e.message;
+        }
+    };
+    _activePollTimer = setTimeout(poll, 800);
+}
+
+async function tpImportar() {
+    const fid = _tpRevFid || _forAtual?.id;
+    if (!fid || !_upTabId) return;
+    document.querySelectorAll('#tp-btn-importar').forEach(b => b.disabled=true);
+    if (_tpModo === 'revisao') {
+        try {
+            const prods = _tpRows.map(p => { const {_idx,...r}=p; return r; });
+            await apiFetch('/api/fornecedores/'+fid+'/tabelas/'+_upTabId+'/review', {
+                method:'PUT', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({produtos: prods})
+            });
+        } catch(e) {
+            showToast('Erro ao salvar revisão: '+e.message,'error');
+            document.querySelectorAll('#tp-btn-importar').forEach(b => b.disabled=false);
+            return;
+        }
+    }
+    try {
+        const d = await apiFetch('/api/fornecedores/'+fid+'/tabelas/'+_upTabId+'/importar', {method:'POST'});
+        showToast(`${d.total} produto(s) importados com sucesso!`);
+        document.getElementById('tp-proc-header').style.display = 'none';
+        document.getElementById('tp-revisao-header').style.display = 'none';
+        _tpModo = 'normal';
+        await tabIrGlobal(fid, _upTabId);
+    } catch(e) {
+        showToast('Erro ao importar: '+e.message, 'error');
+        document.querySelectorAll('#tp-btn-importar').forEach(b => b.disabled=false);
+    }
+}
+
+async function tpAbrirRevisao(fid, tid) {
+    if (!_forAtual || _forAtual.id !== fid) {
+        try { _forAtual = await apiFetch('/api/fornecedores/'+fid); } catch(e) { showToast(e.message,'error'); return; }
+    }
+    _upTabId = tid;
+    _tpRows = []; _tpSel = new Set();
+    let review;
+    try {
+        review = await apiFetch('/api/fornecedores/'+fid+'/tabelas/'+tid+'/review');
+    } catch(e) {
+        await tabIrGlobal(fid, tid); return;
+    }
+    _tpModo = 'revisao';
+    _tpRevFid = fid;
+    _tpRevParams = {desconto: review.desconto||0, ipi: review.ipi||0, st: review.st||0};
+    _tpRows = (review.produtos || []).map((p, i) => ({...p, _idx: i}));
+    document.getElementById('tp-breadcrumb').innerHTML =
+        `<a onclick="showPage('fornecedores')">Fornecedores</a><span>/</span><a onclick="showPage('fornecedor')">${esc(_forAtual.nome)}</a><span>/</span><span>${esc(review.arquivo||'Revisão')}</span>`;
+    document.getElementById('tp-titulo').textContent = review.arquivo || 'Revisão';
+    document.getElementById('tp-subtitulo').textContent =
+        `${_forAtual.nome} — Desc: ${review.desconto}% | IPI: ${review.ipi}% | ST: ${review.st}%`;
+    document.getElementById('tp-busca').value = '';
+    document.getElementById('tp-proc-header').style.display = 'none';
+    document.getElementById('tp-upload-form').style.display = 'none';
+    document.getElementById('tp-btn-download').style.display = 'none';
+    document.getElementById('tp-json-panel').style.display = 'none';
+    document.getElementById('th-col4').textContent = 'Linha do Produto';
+    document.getElementById('th-col5').textContent = 'Observação';
+    document.getElementById('tp-revisao-header').style.display = '';
+    document.getElementById('tp-revisao-msg').textContent =
+        `${_tpRows.length} produto(s) extraídos — edite as células e clique "Importar para Banco" para salvar.`;
+    tpFiltrar();
+    showPage('tabela-produtos');
+}
+
+function tpPausar() {
+    if (_activePollTimer) { clearTimeout(_activePollTimer); _activePollTimer = null; }
+    document.getElementById('tp-btn-pausar').style.display = 'none';
+    document.getElementById('tp-btn-continuar').style.display = '';
+    const msg = document.getElementById('tp-prog-msg');
+    if (msg.textContent && !msg.textContent.includes('pausado')) msg.textContent += ' (pausado)';
+}
+
+function tpContinuar() {
+    document.getElementById('tp-btn-continuar').style.display = 'none';
+    document.getElementById('tp-btn-pausar').style.display = '';
+    startPoll(_pollFid, _upTabId, _pollOffset);
+}
+
+function tabNovaTabela() {
+    if (!_forAtual) { showToast('Selecione um fornecedor primeiro.', 'error'); showPage('fornecedores'); return; }
+    _upFile = null;
+    document.getElementById('upload-file').value = '';
+    document.getElementById('upload-zone-label').innerHTML = 'Clique ou arraste o arquivo aqui<br><small style="opacity:.6;">PDF, XLS, XLSX, TXT, JPG, PNG</small>';
+    document.getElementById('upload-btn').disabled = true;
+    document.getElementById('tp-upload-form').style.display = '';
+    document.getElementById('tp-proc-header').style.display = 'none';
+    document.getElementById('tp-revisao-header').style.display = 'none';
+    document.getElementById('tp-btn-download').style.display = 'none';
+    _tpModo = 'normal'; _tpRows = []; _tpSel = new Set();
+    document.getElementById('th-col4').textContent = 'Desc. Genérica';
+    document.getElementById('th-col5').textContent = 'Observação';
+    document.getElementById('tp-breadcrumb').innerHTML =
+        `<a onclick="showPage('fornecedores')">Fornecedores</a><span>/</span><a onclick="showPage('fornecedor')">${esc(_forAtual.nome)}</a><span>/</span><span>Nova Tabela</span>`;
+    document.getElementById('tp-titulo').textContent = 'Nova Tabela';
+    document.getElementById('tp-subtitulo').textContent = _forAtual.nome;
+    document.getElementById('tp-busca').value = '';
+    tpFiltrar();
+    showPage('tabela-produtos');
+}
+
+async function tabIrProcessando(fid, tid) {
+    if (!_forAtual || _forAtual.id !== fid) {
+        try { _forAtual = await apiFetch('/api/fornecedores/'+fid); } catch(e) { showToast(e.message,'error'); return; }
+    }
+    _tpModo = 'normal'; _tpRows = []; _tpSel = new Set();
+    document.getElementById('tp-busca').value = '';
+    document.getElementById('tp-proc-header').style.display = '';
+    document.getElementById('tp-revisao-header').style.display = 'none';
+    document.getElementById('tp-btn-pausar').style.display = '';
+    document.getElementById('tp-btn-continuar').style.display = 'none';
+    document.getElementById('tp-upload-form').style.display = 'none';
+    document.getElementById('tp-btn-download').style.display = 'none';
+    try {
+        const tab = await apiFetch('/api/fornecedores/'+fid+'/tabelas/'+tid);
+        document.getElementById('tp-proc-arquivo').textContent = tab.arquivo_nome || '';
+        document.getElementById('tp-breadcrumb').innerHTML =
+            `<a onclick="showPage('fornecedores')">Fornecedores</a><span>/</span><a onclick="showPage('fornecedor')">${esc(_forAtual.nome)}</a><span>/</span><span>Processando</span>`;
+        document.getElementById('tp-titulo').textContent = tab.arquivo_nome || 'Processando...';
+        document.getElementById('tp-subtitulo').textContent = _forAtual.nome;
+        if (tab.produtos && tab.produtos.length) { _tpRows = tab.produtos; }
+    } catch(_) {}
+    tpFiltrar();
+    showPage('tabela-produtos');
+    startPoll(fid, tid, _tpRows.length);
+}
+
+async function tabProcessar(tid) {
+    if (!_forAtual) return;
+    try {
+        const r = await fetch('/api/fornecedores/'+_forAtual.id+'/tabelas/'+tid+'/processar', {method:'POST', credentials:'same-origin'});
+        if (!r.ok) throw new Error((await r.json()).detail || r.status);
+    } catch(e) {
+        showToast('Erro ao iniciar: '+e.message, 'error');
+        return;
+    }
+    tabIrProcessando(_forAtual.id, tid);
+}
+
+async function tabIrGlobal(fid, tid) {
+    _tpModo = 'normal';
+    document.getElementById('th-col4').textContent = 'Desc. Genérica';
+    document.getElementById('th-col5').textContent = 'Linha / Obs.';
+    try {
+        if (!_forAtual || _forAtual.id !== fid) {
+            _forAtual = await apiFetch('/api/fornecedores/'+fid);
+        }
+        const tabela = await apiFetch('/api/fornecedores/'+fid+'/tabelas/'+tid);
+        _tpRows = tabela.produtos||[];
+        _tpSel  = new Set();
+        _upTabId = tid;
+        document.getElementById('tp-breadcrumb').innerHTML =
+            `<a onclick="showPage('fornecedores')">Fornecedores</a><span>/</span><a onclick="showPage('fornecedor')">${esc(_forAtual.nome)}</a><span>/</span><span>${esc(tabela.arquivo_nome||'Tabela')}</span>`;
+        document.getElementById('tp-titulo').textContent = tabela.arquivo_nome||'Produtos';
+        document.getElementById('tp-subtitulo').textContent =
+            `${_forAtual.nome} — ${(tabela.data_upload||'').substring(0,10)} — Desc: ${tabela.desconto}% | IPI: ${tabela.ipi}% | ST: ${tabela.st}%`;
+        document.getElementById('tp-busca').value = '';
+        const dl = document.getElementById('tp-btn-download');
+        dl.href = '/api/fornecedores/'+fid+'/tabelas/'+tid+'/arquivo';
+        dl.download = tabela.arquivo_nome || 'tabela';
+        dl.style.display = '';
+        document.getElementById('tp-proc-header').style.display = 'none';
+        document.getElementById('tp-upload-form').style.display = 'none';
+        document.getElementById('tp-revisao-header').style.display = 'none';
+        tpFiltrar();
+        showPage('tabela-produtos');
+    } catch(e) { showToast(e.message, 'error'); }
+}
+
+// ── Render produtos / revisão ──────────────────────────────────────────
+function tpFiltrar() {
+    const q = (document.getElementById('tp-busca').value||'').toLowerCase();
+    const rows = q ? _tpRows.filter(p =>
+        (p.codigo||'').toLowerCase().includes(q) ||
+        (p.descricao||'').toLowerCase().includes(q) ||
+        (p.descricao_generica||'').toLowerCase().includes(q)
+    ) : _tpRows;
+    tpRender(rows);
+}
+
+function tpRender(rows) {
+    if (_tpModo === 'revisao') { tpRenderRevisao(rows); return; }
+    const tbody = document.getElementById('tp-tbody');
+    if (!rows.length) { tbody.innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--text-secondary);">Nenhum produto.</td></tr>'; return; }
+    tbody.innerHTML = rows.map(p => `
+        <tr id="tp-r-${p.id}" class="${_tpSel.has(p.id)?'tp-sel':''}">
+            <td><input type="checkbox" ${_tpSel.has(p.id)?'checked':''} onchange="tpToggle(${p.id},this.checked)"></td>
+            <td class="td-code">${esc(p.codigo||'—')}${p.ncm?`<br><span style="font-size:.67rem;opacity:.4;">${esc(p.ncm)}</span>`:''}
+            </td>
+            <td style="font-size:.83rem;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${esc(p.descricao||'')}">${esc(p.descricao||'')}</td>
+            <td style="min-width:110px;"><input class="prod-generica" value="${esc(p.descricao_generica||'')}" placeholder="—" data-id="${p.id}" onchange="tpSalvarGenerica(${p.id},this.value)" onfocus="tpToggle(${p.id},true)"></td>
+            <td style="font-size:.78rem;max-width:160px;color:var(--text-secondary);" title="${esc((p.linha_produto||'')+(p.observacao?'\n'+p.observacao:''))}">
+                ${p.linha_produto ? `<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(p.linha_produto)}</div>` : ''}
+                ${p.observacao ? `<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--accent-color);font-size:.72rem;">${esc(p.observacao)}</div>` : ''}
+                ${!p.linha_produto && !p.observacao ? '—' : ''}
+            </td>
+            <td style="font-size:.82rem;">${esc(p.unidade||'—')}</td>
+            <td class="td-money">${fmtBRL(p.preco_base)}</td>
+            <td class="td-money">${fmtBRL(p.preco_desconto)}</td>
+            <td class="td-r">${p.ipi??'—'}</td>
+            <td class="td-r">${p.st??'—'}</td>
+            <td class="td-money" style="color:var(--accent-color);font-weight:600;">${fmtBRL(p.preco_custo)}</td>
+        </tr>`).join('');
+}
+
+function _revCalc(p) {
+    const {desconto, ipi: ipiG, st: stG} = _tpRevParams;
+    const base = parseFloat(p.preco_base) || 0;
+    const ipi  = p.ipi_produto != null ? parseFloat(p.ipi_produto) : ipiG;
+    const st   = p.st_produto  != null ? parseFloat(p.st_produto)  : stG;
+    const pd   = base > 0 ? base * (1 - desconto/100) : null;
+    const pc   = pd   != null ? pd * (1 + ipi/100) * (1 + st/100) : null;
+    return {base, ipi, st, pd, pc};
+}
+
+function tpRenderRevisao(rows) {
+    const tbody = document.getElementById('tp-tbody');
+    if (!rows.length) { tbody.innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--text-secondary);">Nenhum produto.</td></tr>'; return; }
+    tbody.innerHTML = rows.map(p => {
+        const idx = p._idx;
+        const {base, ipi, st, pd, pc} = _revCalc(p);
+        const ipiStyle = p.ipi_produto != null ? 'color:var(--accent-color)' : '';
+        return `<tr>
+            <td></td>
+            <td class="td-code">
+                <input class="rev-inp td-code" style="width:90px;" value="${esc(p.codigo||'')}"
+                    onchange="tpRevEdit(${idx},'codigo',this.value)">
+                ${p.ncm?`<br><span style="font-size:.67rem;opacity:.4;">${esc(p.ncm)}</span>`:''}
+            </td>
+            <td><input class="rev-inp" style="width:195px;font-size:.83rem;" value="${esc(p.descricao||'')}"
+                onchange="tpRevEdit(${idx},'descricao',this.value)"></td>
+            <td><input class="rev-inp" style="width:140px;font-size:.78rem;" value="${esc(p.linha_produto||'')}"
+                placeholder="—" onchange="tpRevEdit(${idx},'linha_produto',this.value)"></td>
+            <td><textarea class="rev-inp" style="width:130px;height:34px;resize:none;font-size:.78rem;"
+                placeholder="—" onchange="tpRevEdit(${idx},'observacao',this.value)">${esc(p.observacao||'')}</textarea></td>
+            <td><input class="rev-inp" style="width:36px;" value="${esc(p.unidade||'un')}"
+                onchange="tpRevEdit(${idx},'unidade',this.value)"></td>
+            <td class="td-money"><input class="rev-inp" style="width:72px;text-align:right;"
+                value="${base > 0 ? base.toFixed(2) : ''}"
+                onchange="tpRevEditPreco(${idx},this.value)"></td>
+            <td class="td-money" id="rev-pd-${idx}">${pd!=null?fmtBRL(pd):'—'}</td>
+            <td class="td-r"><input class="rev-inp" style="width:42px;text-align:right;${ipiStyle}"
+                value="${ipi}" onchange="tpRevEditIpiSt(${idx},'ipi_produto',this.value)"></td>
+            <td class="td-r"><input class="rev-inp" style="width:42px;text-align:right;"
+                value="${st}" onchange="tpRevEditIpiSt(${idx},'st_produto',this.value)"></td>
+            <td class="td-money" style="color:var(--accent-color);font-weight:600;" id="rev-pc-${idx}">${pc!=null?fmtBRL(pc):'—'}</td>
+        </tr>`;
+    }).join('');
+}
+
+function tpRevEdit(idx, campo, valor) {
+    if (_tpRows[idx] !== undefined) _tpRows[idx][campo] = valor;
+}
+function tpRevEditIpiSt(idx, campo, valor) {
+    const v = parseFloat(String(valor).replace(',','.'));
+    if (_tpRows[idx] !== undefined) _tpRows[idx][campo] = isNaN(v) ? null : v;
+    _tpRevUpdateRow(idx);
+}
+function _tpRevUpdateRow(idx) {
+    const p = _tpRows[idx];
+    if (!p) return;
+    const {pd, pc} = _revCalc(p);
+    const pdEl = document.getElementById('rev-pd-'+idx);
+    const pcEl = document.getElementById('rev-pc-'+idx);
+    if (pdEl) pdEl.textContent = pd!=null ? fmtBRL(pd) : '—';
+    if (pcEl) pcEl.textContent = pc!=null ? fmtBRL(pc) : '—';
+}
+function tpRevEditPreco(idx, valor) {
+    const preco = parseFloat(String(valor).replace(',','.')) || 0;
+    if (_tpRows[idx] !== undefined) _tpRows[idx]['preco_base'] = preco;
+    _tpRevUpdateRow(idx);
+}
+
+function tpCopiarDebug() {
+    if (!_tpRows || !_tpRows.length) { showToast('Nenhum dado carregado', 'error'); return; }
+    const data = _tpRows.map(p => { const {_idx,...r}=p; return r; });
+    const txt = JSON.stringify(data, null, 2);
+    navigator.clipboard.writeText(txt)
+        .then(() => showToast(`JSON copiado — ${data.length} produto(s)`, 'success'))
+        .catch(() => { prompt('Copie o JSON abaixo:', txt); });
+}
+
+function tpJsonToggle() {
+    const panel = document.getElementById('tp-json-panel');
+    if (panel.style.display !== 'none') { panel.style.display='none'; return; }
+    const data = _tpRows.map(p => { const {_idx,...r}=p; return r; });
+    document.getElementById('tp-json-ta').value = JSON.stringify(data, null, 2);
+    panel.style.display = '';
+}
+
+async function tpJsonSalvar() {
+    const ta = document.getElementById('tp-json-ta');
+    let parsed;
+    try {
+        parsed = JSON.parse(ta.value);
+        if (!Array.isArray(parsed)) throw new Error('Deve ser um array JSON');
+    } catch(e) { showToast('JSON inválido: '+e.message,'error'); return; }
+    try {
+        await apiFetch('/api/fornecedores/'+_tpRevFid+'/tabelas/'+_upTabId+'/review', {
+            method:'PUT', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({produtos: parsed})
+        });
+        _tpRows = parsed.map((p,i) => ({...p, _idx:i}));
+        document.getElementById('tp-json-panel').style.display = 'none';
+        document.getElementById('tp-revisao-msg').textContent = `${_tpRows.length} produto(s) — JSON salvo.`;
+        tpFiltrar();
+        showToast('JSON salvo.');
+    } catch(e) { showToast('Erro ao salvar: '+e.message,'error'); }
+}
+
+function tpToggle(id, checked) {
+    if (checked) _tpSel.add(id); else _tpSel.delete(id);
+    const row = document.getElementById('tp-r-'+id);
+    if (row) { row.classList.toggle('tp-sel',checked); row.querySelector('input[type=checkbox]').checked=checked; }
+    tpBulkSync();
+}
+function tpSelectAll(checked) {
+    document.querySelectorAll('#tp-tbody input[type=checkbox]').forEach(cb => {
+        const id = parseInt(cb.closest('tr').id.replace('tp-r-',''));
+        cb.checked=checked;
+        if (checked) _tpSel.add(id); else _tpSel.delete(id);
+        cb.closest('tr').classList.toggle('tp-sel',checked);
+    });
+    tpBulkSync();
+}
+function tpDeselectAll() {
+    _tpSel.clear();
+    document.querySelectorAll('#tp-tbody tr').forEach(tr => {
+        tr.classList.remove('tp-sel');
+        const cb=tr.querySelector('input[type=checkbox]');
+        if(cb) cb.checked=false;
+    });
+    document.getElementById('tp-check-all').checked=false;
+    tpBulkSync();
+}
+function tpBulkSync() {
+    const n=_tpSel.size;
+    document.getElementById('tp-bulk-bar').classList.toggle('visible',n>0);
+    document.getElementById('tp-bulk-count').textContent=n+' selecionado'+(n!==1?'s':'');
+}
+
+async function tpAplicarGenerica() {
+    const val = document.getElementById('tp-bulk-generica').value.trim();
+    if (!val || !_tpSel.size) return;
+    const ids = [..._tpSel];
+    try {
+        const r = await fetch('/api/produtos/bulk-generica',{method:'PATCH',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({ids,descricao_generica:val})});
+        if (r.ok) {
+            _tpRows.forEach(p => { if(_tpSel.has(p.id)) p.descricao_generica=val; });
+            showToast(`Desc. genérica aplicada em ${ids.length} produto(s).`);
+            document.getElementById('tp-bulk-generica').value='';
+            tpFiltrar(); tpDeselectAll();
+        }
+    } catch(e) { showToast('Erro: '+e.message,'error'); }
+}
+
+async function tpSalvarGenerica(id, val) {
+    await fetch('/api/produtos/bulk-generica',{method:'PATCH',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({ids:[id],descricao_generica:val})});
+    const p=_tpRows.find(r=>r.id===id);
+    if(p) p.descricao_generica=val;
+}
+
+// ── Fornecedor Modal ───────────────────────────────────────────────────
+function forModalAbrir(mode='novo') {
+    const isEdit = mode==='edit';
+    const f = isEdit ? _forAtual : {};
+    document.getElementById('forn-modal-overlay')?.remove();
+    const ov = document.createElement('div');
+    ov.id='forn-modal-overlay';
+    ov.className='modal-overlay';
+    ov.innerHTML = `
+        <div class="modal-box" onclick="event.stopPropagation()">
+            <div class="modal-title">${isEdit?'Editar Fornecedor':'Novo Fornecedor'}</div>
+            <div class="form-grid">
+                <div class="form-group full"><label class="form-label">Nome *</label><input class="form-input" id="fm-nome" value="${esc(f.nome||'')}" placeholder="Razão social ou nome fantasia"></div>
+                <div class="form-group"><label class="form-label">Representante</label><input class="form-input" id="fm-rep" value="${esc(f.nome_representante||'')}"></div>
+                <div class="form-group"><label class="form-label">WhatsApp</label><input class="form-input" id="fm-zap" value="${esc(f.whatsapp||'')}" placeholder="(35) 9 9999-0000"></div>
+                <div class="form-group"><label class="form-label">E-mail Cotação</label><input class="form-input" id="fm-ecot" type="email" value="${esc(f.email_cotacao||'')}"></div>
+                <div class="form-group"><label class="form-label">E-mail Pedido</label><input class="form-input" id="fm-eped" type="email" value="${esc(f.email_pedido||'')}" placeholder="se diferente"></div>
+                <div class="form-group"><label class="form-label">Prazo Entrega (dias)</label><input class="form-input" id="fm-prazo" type="number" value="${f.prazo_entrega||''}"></div>
+                <div class="form-group"><label class="form-label">Compra Mínima (R$)</label><input class="form-input" id="fm-min" type="number" step="0.01" value="${f.compra_minima||''}"></div>
+                <div class="form-group full"><label class="form-label">Cond. Pagamento</label><input class="form-input" id="fm-pag" value="${esc(f.cond_pagamento||'')}" placeholder="Ex: 30/60/90 dias"></div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="document.getElementById('forn-modal-overlay').remove()">Cancelar</button>
+                <button class="btn-primary" onclick="forSalvar(${isEdit?_forAtual.id:'null'})">${isEdit?'Salvar':'Criar'}</button>
+            </div>
+        </div>`;
+    ov.addEventListener('click', ()=>ov.remove());
+    document.body.appendChild(ov);
+    document.getElementById('fm-nome').focus();
+}
+
+async function forSalvar(id) {
+    const body = {
+        nome:               document.getElementById('fm-nome').value.trim(),
+        nome_representante: document.getElementById('fm-rep').value.trim()||null,
+        whatsapp:           document.getElementById('fm-zap').value.trim()||null,
+        email_cotacao:      document.getElementById('fm-ecot').value.trim()||null,
+        email_pedido:       document.getElementById('fm-eped').value.trim()||null,
+        prazo_entrega:      parseInt(document.getElementById('fm-prazo').value)||null,
+        compra_minima:      parseFloat(document.getElementById('fm-min').value)||null,
+        cond_pagamento:     document.getElementById('fm-pag').value.trim()||null,
+    };
+    if (!body.nome) { showToast('Nome obrigatório.','error'); return; }
+    const url = id!==null ? '/api/fornecedores/'+id : '/api/fornecedores';
+    const method = id!==null ? 'PUT' : 'POST';
+    try {
+        const saved = await apiFetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+        document.getElementById('forn-modal-overlay')?.remove();
+        showToast(id!==null?'Fornecedor atualizado!':'Fornecedor criado!');
+        if (id!==null) { _forAtual=saved; fornRender(); } else { await forLoad(); }
+    } catch(e) { showToast(e.message,'error'); }
+}
+
+async function forExcluir() {
+    if (!_forAtual) return;
+    if (!confirm(`Excluir "${_forAtual.nome}"?\nTodas as tabelas de preço serão apagadas.`)) return;
+    try {
+        await apiFetch('/api/fornecedores/'+_forAtual.id,{method:'DELETE'});
+        showToast('Fornecedor excluído.');
+        _forAtual=null;
+        await forLoad();
+        showPage('fornecedores');
+    } catch(e) { showToast(e.message,'error'); }
+}
+
+// ── Inicialização ─────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => { forLoad(); });
+</script>
+{% endblock %}

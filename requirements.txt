@@ -9,3 +9,13 @@ bcrypt
 itsdangerous
 aiofiles
 python-slugify
+# ── Orçamentos internos (migrado de com.automacaobbc.ia) ──
+httpx
+pandas
+openpyxl
+pdfplumber
+PyMuPDF
+Pillow
+weasyprint
+Markdown
+beautifulsoup4
