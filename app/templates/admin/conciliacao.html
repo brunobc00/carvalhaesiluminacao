@@ -1,0 +1,866 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Conciliação Financeira{% endblock %}
+{% block page_title %}Conciliação Financeira{% endblock %}
+{% block nav_conciliacao %}bg-amber-500 text-white{% endblock %}
+
+{% block content %}
+<style>
+/* ── Tema escuro escopado (portado do SPA Antigravity Hub) ──────────── */
+#conc-root {
+    --bg-color: #0a0f0d;
+    --card-bg: rgba(255, 255, 255, 0.03);
+    --bg-card: rgba(255, 255, 255, 0.03);
+    --bg-secondary: #0b1510;
+    --border-color: rgba(255, 255, 255, 0.1);
+    --accent-color: #1fff8c;
+    --accent-rgb: 31, 255, 140;
+    --color-success: #4caf50;
+    --text-primary: #e0e0e0;
+    --text-secondary: #a0a0a0;
+    background: var(--bg-color);
+    color: var(--text-primary);
+    border-radius: 16px;
+    padding: 1.8rem;
+    font-family: 'Inter', system-ui, sans-serif;
+}
+#conc-root header { margin-bottom: 1.5rem; }
+#conc-root h1 { color: var(--text-primary); font-size: 1.6rem; margin-bottom: 0.4rem; }
+#conc-root h3 { color: var(--text-primary); }
+#conc-root .subtitle { color: var(--text-secondary); font-size: 0.9rem; }
+
+/* ── Cards ─────────────────────────────────────────────────────── */
+#conc-root .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.2rem;
+}
+#conc-root .card-full { grid-column: 1 / -1; }
+
+/* ── Botões da marca ───────────────────────────────────────────── */
+#conc-root .btn-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.04);
+    color: var(--text-secondary);
+    justify-content: center;
+}
+#conc-root .btn-brand:hover { border-color: var(--accent-color); color: var(--accent-color); }
+#conc-root .btn-brand:disabled { opacity: 0.35; cursor: not-allowed; }
+#conc-root .btn-brand-primary {
+    background: rgba(31,255,140,0.1);
+    border-color: rgba(31,255,140,0.4);
+    color: var(--accent-color);
+}
+#conc-root .btn-brand-primary:hover { background: rgba(31,255,140,0.2); }
+#conc-root .btn-brand-secondary { background: transparent; }
+
+/* ── Tabs ──────────────────────────────────────────────────────── */
+#conc-root .conc-tab {
+    padding: .4rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: .85rem;
+    transition: all .15s;
+}
+#conc-root .conc-tab:hover { background: rgba(255,255,255,.05); color: var(--text-primary); }
+#conc-root .conc-tab.active { background: var(--accent-color); color: #000; border-color: var(--accent-color); font-weight: 600; }
+
+/* ── KPIs ──────────────────────────────────────────────────────── */
+#conc-root .conc-kpi {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+}
+#conc-root .conc-kpi .kpi-label { font-size: .78rem; color: var(--text-secondary); margin-bottom: .25rem; }
+#conc-root .conc-kpi .kpi-value { font-size: 1.4rem; font-weight: 700; }
+#conc-root .conc-kpi.ok    { border-left: 4px solid #4caf50; }
+#conc-root .conc-kpi.warn  { border-left: 4px solid #ff9800; }
+#conc-root .conc-kpi.error { border-left: 4px solid #f44336; }
+
+/* ── Tabela ────────────────────────────────────────────────────── */
+#conc-root .conc-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+#conc-root .conc-table th {
+    text-align: left; padding: .5rem .75rem;
+    background: var(--bg-secondary); font-size: .78rem;
+    color: var(--text-primary);
+    position: sticky; top: 0; z-index: 1;
+}
+#conc-root .conc-table td { padding: .4rem .75rem; border-bottom: 1px solid var(--border-color); color: var(--text-primary); }
+#conc-root .conc-table tr:hover td { background: rgba(255,255,255,.03); }
+
+/* ── Status badges ─────────────────────────────────────────────── */
+#conc-root .conc-status-ok     { background: rgba(76,175,80,.12);  color: #81c784; padding: .15rem .5rem; border-radius: 4px; font-size: .75rem; font-weight: 600; }
+#conc-root .conc-status-warn   { background: rgba(255,152,0,.12);  color: #ffb74d; padding: .15rem .5rem; border-radius: 4px; font-size: .75rem; font-weight: 600; }
+#conc-root .conc-status-error  { background: rgba(244,67,54,.12);  color: #e57373; padding: .15rem .5rem; border-radius: 4px; font-size: .75rem; font-weight: 600; }
+#conc-root .conc-status-info   { background: rgba(33,150,243,.12); color: #64b5f6; padding: .15rem .5rem; border-radius: 4px; font-size: .75rem; font-weight: 600; }
+
+/* ── Drop zone ─────────────────────────────────────────────────── */
+#conc-root .conc-drop-hover { background: rgba(var(--accent-rgb),.08) !important; border-color: var(--accent-color) !important; }
+#conc-root .conc-drop-zona {
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+    padding: .9rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all .2s;
+}
+#conc-root .conc-drop-zona:hover { background: rgba(255,255,255,.03); }
+
+/* ── Botão baixa ───────────────────────────────────────────────── */
+#conc-root .conc-btn-baixa {
+    padding: .25rem .65rem;
+    border-radius: 5px;
+    border: 1px solid;
+    font-size: .75rem;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all .15s;
+}
+#conc-root .conc-btn-baixa.nao { background: transparent; border-color: var(--accent-color); color: var(--accent-color); }
+#conc-root .conc-btn-baixa.sim { background: rgba(76,175,80,.15); border-color: #4caf50; color: #81c784; }
+
+/* ── Tags de extrato ───────────────────────────────────────────── */
+#conc-root .conc-extrato-tag {
+    display: inline-flex; align-items: center; gap: .3rem;
+    padding: .2rem .6rem; border-radius: 12px; font-size: .75rem; font-weight: 600;
+    margin: .2rem;
+}
+#conc-root .conc-extrato-tag.cielo  { background: rgba(0,133,202,.15); color: #4db6f7; }
+#conc-root .conc-extrato-tag.rede   { background: rgba(255,80,80,.15); color: #f77; }
+#conc-root .conc-extrato-tag.itau   { background: rgba(255,152,0,.15); color: #ffb74d; }
+#conc-root .conc-extrato-tag.omie   { background: rgba(76,175,80,.15); color: #81c784; }
+
+/* ── Filtros conciliação ───────────────────────────────────────── */
+#conc-root .conc-flabel {
+    font-size: .73rem; font-weight: 600;
+    color: var(--text-secondary);
+    display: block; margin-bottom: .2rem;
+}
+#conc-root .conc-fselect, #conc-root .conc-finput {
+    width: 100%;
+    padding: .3rem .55rem;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: .82rem;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    height: 2rem;
+    box-sizing: border-box;
+}
+#conc-root .conc-fselect:focus, #conc-root .conc-finput:focus {
+    outline: none;
+    border-color: var(--accent-color);
+}
+
+/* ── Toasts ────────────────────────────────────────────────────── */
+.toast-container{position:fixed;bottom:2rem;right:2rem;z-index:9999;display:flex;flex-direction:column;gap:.5rem}
+.toast{padding:.8rem 1.4rem;border-radius:10px;font-size:.85rem;font-weight:600;backdrop-filter:blur(10px)}
+.toast-success{background:rgba(31,255,140,.15);border:1px solid rgba(31,255,140,.4);color:#1fff8c}
+.toast-error{background:rgba(255,80,80,.15);border:1px solid rgba(255,80,80,.4);color:#ff5050}
+.toast-info{background:rgba(33,150,243,.15);border:1px solid rgba(33,150,243,.4);color:#64b5f6}
+</style>
+
+<div id="conc-root">
+    <header>
+        <h1>⚖️ Conciliação Financeira</h1>
+        <p class="subtitle">Importe extratos bancários e de maquininhas, compare com o Omie e dê baixa nos títulos.</p>
+    </header>
+
+    <!-- ══════════════════════════════════════════════════════════
+         ENTRADA DE DADOS
+    ══════════════════════════════════════════════════════════ -->
+    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1.25rem;">
+        <div style="flex:1;height:1px;background:var(--border-color);"></div>
+        <span style="font-size:.8rem;font-weight:700;letter-spacing:.08em;color:var(--text-secondary);white-space:nowrap;">ENTRADA DE DADOS</span>
+        <div style="flex:1;height:1px;background:var(--border-color);"></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:1rem;margin-bottom:1.5rem;">
+
+        <!-- Card ITAÚ -->
+        <div class="card" style="padding:1rem;">
+            <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.75rem;">
+                <span style="font-size:1.5rem;">🏦</span>
+                <div>
+                    <h3 style="margin:0;font-size:.95rem;">Banco Itaú</h3>
+                    <span style="font-size:.7rem;color:#888;background:rgba(128,128,128,.12);padding:.1rem .45rem;border-radius:4px;">🚧 API em desenvolvimento</span>
+                </div>
+            </div>
+            <div class="conc-drop-zona" id="drop-itau"
+                 ondragover="concDragOverFonte(event,'itau')" ondragleave="concDragLeaveFonte(event,'itau')" ondrop="concDropFonte(event,'itau')"
+                 onclick="document.getElementById('file-itau').click()">
+                <div style="font-size:1.4rem;margin-bottom:.25rem;">📂</div>
+                <div style="font-size:.8rem;font-weight:600;">Clique ou arraste o extrato .xlsx</div>
+            </div>
+            <input type="file" id="file-itau" accept=".xlsx,.xls" style="display:none" onchange="concUploadFonte('itau',this.files);this.value=''">
+            <div id="status-itau" style="font-size:.8rem;margin-top:.5rem;line-height:1.6;min-height:.8rem;"></div>
+            <div id="historico-itau" style="font-size:.74rem;margin-top:.4rem;color:#888;"></div>
+        </div>
+
+        <!-- Card CIELO -->
+        <div class="card" style="padding:1rem;">
+            <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.75rem;">
+                <span style="font-size:1.5rem;">💳</span>
+                <div>
+                    <h3 style="margin:0;font-size:.95rem;">Adquirente Cielo</h3>
+                    <span style="font-size:.7rem;color:#888;background:rgba(128,128,128,.12);padding:.1rem .45rem;border-radius:4px;">🚧 API em desenvolvimento</span>
+                </div>
+            </div>
+            <div class="conc-drop-zona" id="drop-cielo"
+                 ondragover="concDragOverFonte(event,'cielo')" ondragleave="concDragLeaveFonte(event,'cielo')" ondrop="concDropFonte(event,'cielo')"
+                 onclick="document.getElementById('file-cielo').click()">
+                <div style="font-size:1.4rem;margin-bottom:.25rem;">📂</div>
+                <div style="font-size:.8rem;font-weight:600;">Clique ou arraste o extrato .xlsx</div>
+            </div>
+            <input type="file" id="file-cielo" accept=".xlsx,.xls" style="display:none" onchange="concUploadFonte('cielo',this.files);this.value=''">
+            <div id="status-cielo" style="font-size:.8rem;margin-top:.5rem;line-height:1.6;min-height:.8rem;"></div>
+            <div id="historico-cielo" style="font-size:.74rem;margin-top:.4rem;color:#888;"></div>
+        </div>
+
+        <!-- Card REDE -->
+        <div class="card" style="padding:1rem;">
+            <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.75rem;">
+                <span style="font-size:1.5rem;">💳</span>
+                <div>
+                    <h3 style="margin:0;font-size:.95rem;">Adquirente Rede</h3>
+                    <span style="font-size:.7rem;color:#888;background:rgba(128,128,128,.12);padding:.1rem .45rem;border-radius:4px;">🚧 API em desenvolvimento</span>
+                </div>
+            </div>
+            <div class="conc-drop-zona" id="drop-rede"
+                 ondragover="concDragOverFonte(event,'rede')" ondragleave="concDragLeaveFonte(event,'rede')" ondrop="concDropFonte(event,'rede')"
+                 onclick="document.getElementById('file-rede').click()">
+                <div style="font-size:1.4rem;margin-bottom:.25rem;">📂</div>
+                <div style="font-size:.8rem;font-weight:600;">Clique ou arraste o extrato .xlsx</div>
+            </div>
+            <input type="file" id="file-rede" accept=".xlsx,.xls" style="display:none" onchange="concUploadFonte('rede',this.files);this.value=''">
+            <div id="status-rede" style="font-size:.8rem;margin-top:.5rem;line-height:1.6;min-height:.8rem;"></div>
+            <div id="historico-rede" style="font-size:.74rem;margin-top:.4rem;color:#888;"></div>
+        </div>
+
+        <!-- Card OMIE -->
+        <div class="card" style="padding:1rem;">
+            <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.75rem;">
+                <span style="font-size:1.5rem;">📊</span>
+                <div>
+                    <h3 style="margin:0;font-size:.95rem;">ERP Omie</h3>
+                    <span style="font-size:.7rem;color:#4caf50;background:rgba(76,175,80,.12);padding:.1rem .45rem;border-radius:4px;">✅ API disponível</span>
+                </div>
+            </div>
+            <button class="btn-brand btn-brand-primary" style="width:100%;margin-bottom:.65rem;font-size:.82rem;padding:.45rem 0;" onclick="concOmieApi()">
+                🔄 Buscar Títulos via API
+            </button>
+            <div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.65rem;">
+                <div style="flex:1;height:1px;background:var(--border-color);"></div>
+                <span style="font-size:.7rem;color:#888;">ou upload manual</span>
+                <div style="flex:1;height:1px;background:var(--border-color);"></div>
+            </div>
+            <div class="conc-drop-zona" id="drop-omie"
+                 ondragover="concDragOverFonte(event,'omie')" ondragleave="concDragLeaveFonte(event,'omie')" ondrop="concDropFonte(event,'omie')"
+                 onclick="document.getElementById('file-omie').click()">
+                <div style="font-size:1.4rem;margin-bottom:.25rem;">📂</div>
+                <div style="font-size:.8rem;font-weight:600;">Clique ou arraste o extrato .xlsx</div>
+            </div>
+            <input type="file" id="file-omie" accept=".xlsx,.xls" style="display:none" onchange="concUploadFonte('omie',this.files);this.value=''">
+            <div id="status-omie" style="font-size:.8rem;margin-top:.5rem;line-height:1.6;min-height:.8rem;"></div>
+            <div id="historico-omie" style="font-size:.74rem;margin-top:.4rem;color:#888;"></div>
+        </div>
+    </div>
+
+    <!-- Extratos no banco -->
+    <div class="card card-full" style="margin-bottom:2rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;">
+            <h3 style="margin:0;">🗄️ Extratos no Banco</h3>
+            <div style="display:flex;gap:.5rem;">
+                <button class="btn-brand btn-brand-secondary" onclick="concCarregarExtratos()" style="font-size:.78rem;padding:.25rem .7rem;">↺ Atualizar</button>
+                <button class="btn-brand btn-brand-secondary" onclick="concReconciliar()" style="font-size:.78rem;padding:.25rem .7rem;">⚙️ Recalcular</button>
+            </div>
+        </div>
+        <div id="conc-extratos-lista" style="font-size:.85rem;min-height:2rem;">
+            <div style="color:#888;">Carregando...</div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         PARTE 2 — ANÁLISE E AÇÕES NO OMIE
+    ══════════════════════════════════════════════════════════ -->
+    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;">
+        <div style="flex:1;height:1px;background:var(--border-color);"></div>
+        <span style="font-size:.8rem;font-weight:700;letter-spacing:.08em;color:var(--text-secondary);white-space:nowrap;">PARTE 2 — ANÁLISE E AÇÕES NO OMIE</span>
+        <div style="flex:1;height:1px;background:var(--border-color);"></div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div id="conc-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:.75rem;margin-bottom:1.5rem;"></div>
+
+    <!-- Tabs de análise -->
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;">
+        <button class="conc-tab active" data-tab="pendentes" onclick="concTab(this)">🔴 Dar Baixa Omie</button>
+        <button class="conc-tab" data-tab="vs-itau-cielo" onclick="concTab(this)">🏦 Cielo vs Itaú</button>
+        <button class="conc-tab" data-tab="vs-omie-cielo" onclick="concTab(this)">📋 Cielo vs Omie</button>
+        <button class="conc-tab" data-tab="vs-itau-rede"  onclick="concTab(this)">🏦 Rede vs Itaú</button>
+        <button class="conc-tab" data-tab="vs-omie-rede"  onclick="concTab(this)">📋 Rede vs Omie</button>
+    </div>
+
+    <!-- Tab: Dar Baixa -->
+    <div id="conc-pane-pendentes" class="conc-pane">
+
+        <!-- Filtros -->
+        <div class="card card-full" style="margin-bottom:.75rem;padding:.85rem 1rem;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:.6rem .75rem;align-items:end;">
+
+                <div>
+                    <label class="conc-flabel">Operadora</label>
+                    <select id="conc-pend-fonte" onchange="concCarregarContasOpts();_concPage=1;concCarregarPendentes()" class="conc-fselect" autocomplete="off">
+                        <option value="">Todos</option>
+                        <option value="cielo">Cielo</option>
+                        <option value="rede">Rede</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="conc-flabel">Conta</label>
+                    <select id="conc-f-conta" onchange="_concPage=1;concCarregarPendentes()" class="conc-fselect" autocomplete="off">
+                        <option value="">Todas</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="conc-flabel">Emissão de</label>
+                    <input type="date" id="conc-f-di" class="conc-finput" autocomplete="off"
+                           onchange="_concPage=1;concCarregarPendentes()">
+                </div>
+
+                <div>
+                    <label class="conc-flabel">até</label>
+                    <input type="date" id="conc-f-df" class="conc-finput" autocomplete="off"
+                           onchange="_concPage=1;concCarregarPendentes()">
+                </div>
+
+                <div>
+                    <label class="conc-flabel">Itaú</label>
+                    <select id="conc-f-itau" onchange="_concPage=1;concCarregarPendentes()" class="conc-fselect" autocomplete="off">
+                        <option value="">Todos</option>
+                        <option value="sim">✅ Confirmado</option>
+                        <option value="nao">⚠️ Não confirmado</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="conc-flabel">Baixa</label>
+                    <select id="conc-f-baixa" onchange="_concPage=1;concCarregarPendentes()" class="conc-fselect" autocomplete="off">
+                        <option value="">Todos</option>
+                        <option value="nao">Não marcado</option>
+                        <option value="sim">🔵 Marcado</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="conc-flabel">Mostrar</label>
+                    <div style="display:flex;align-items:center;gap:.35rem;height:2rem;">
+                        <input type="checkbox" id="conc-pend-apenas" checked onchange="_concPage=1;concCarregarPendentes()" autocomplete="off">
+                        <label for="conc-pend-apenas" style="font-size:.82rem;cursor:pointer;">Só pendentes</label>
+                    </div>
+                </div>
+
+                <!-- busca texto span 2 colunas -->
+                <div style="grid-column:span 2;">
+                    <label class="conc-flabel">🔎 Pesquisar (cliente, conta, forma de pagamento)</label>
+                    <input type="text" id="conc-f-busca" placeholder="Ex: FRANCISLENE, CREDITO, REDECARD..."
+                           class="conc-finput" style="width:100%;">
+                </div>
+
+                <div style="display:flex;align-items:flex-end;gap:.4rem;">
+                    <button class="btn-brand btn-brand-secondary" onclick="_concLimparFiltros()" style="font-size:.78rem;padding:.3rem .7rem;flex:1;">Limpar</button>
+                    <button class="btn-brand btn-brand-primary" onclick="_concPage=1;concCarregarPendentes()" style="font-size:.78rem;padding:.3rem .7rem;flex:1.5;">🔍 Buscar</button>
+                </div>
+                <div style="display:flex;align-items:flex-end;">
+                    <button class="btn-brand btn-brand-primary" onclick="concMarcarTodos()" style="font-size:.78rem;padding:.3rem .7rem;width:100%;white-space:nowrap;background:var(--color-success,#4caf50);">✅ Marcar com Itaú</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="conc-pend-tabela"></div>
+    </div>
+
+    <!-- Tab: Cielo vs Itaú -->
+    <div id="conc-pane-vs-itau-cielo" class="conc-pane" style="display:none;">
+        <p style="font-size:.82rem;color:var(--text-secondary);margin-bottom:.75rem;">
+            Compara o que a Cielo diz que pagou (valor líquido) com os créditos recebidos no Itaú, dia a dia.
+        </p>
+        <div id="conc-dias-cielo-itau"></div>
+    </div>
+
+    <!-- Tab: Cielo vs Omie -->
+    <div id="conc-pane-vs-omie-cielo" class="conc-pane" style="display:none;">
+        <p style="font-size:.82rem;color:var(--text-secondary);margin-bottom:.75rem;">
+            Compara o valor bruto das vendas Cielo com os títulos lançados no Omie (contas CIELO), por data de venda.
+        </p>
+        <div id="conc-dias-cielo-omie"></div>
+    </div>
+
+    <!-- Tab: Rede vs Itaú -->
+    <div id="conc-pane-vs-itau-rede" class="conc-pane" style="display:none;">
+        <p style="font-size:.82rem;color:var(--text-secondary);margin-bottom:.75rem;">
+            Compara o valor líquido Rede com os créditos REDECARD no Itaú, dia a dia.
+        </p>
+        <div id="conc-dias-rede-itau"></div>
+    </div>
+
+    <!-- Tab: Rede vs Omie -->
+    <div id="conc-pane-vs-omie-rede" class="conc-pane" style="display:none;">
+        <p style="font-size:.82rem;color:var(--text-secondary);margin-bottom:.75rem;">
+            Compara vendas Rede com os títulos lançados no Omie (contas REDECARD), por data de venda.
+        </p>
+        <div id="conc-dias-rede-omie"></div>
+    </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+// ── Toast ────────────────────────────────────────────────────────
+const toastContainer = document.getElementById('toast-container');
+function showToast(msg, type = 'success') {
+    const cls = (type === 'error') ? 'toast-error' : (type === 'info') ? 'toast-info' : 'toast-success';
+    const t = document.createElement('div');
+    t.className = `toast ${cls}`;
+    t.textContent = msg;
+    toastContainer.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+}
+
+// ── Helpers ──────────────────────────────────────────────────────
+const _BRL = v => v == null ? '—' : 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+const _esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+// fetch helper — sempre envia cookie de sessão admin
+function concFetch(path, opts = {}) {
+    opts.credentials = 'same-origin';
+    return fetch(path, opts);
+}
+
+function _concStatusBadge(st) {
+    const m = {
+        'OK':            ['ok',   '✅ OK'],
+        'DIFER_PEQUENA': ['warn', '⚠️ Dif. Pequena'],
+        'DIVERGENCIA':   ['error','❌ Divergência'],
+        'SEM_ITAU':      ['error','❌ Sem Itaú'],
+        'SEM_FONTE':     ['info', 'ℹ️ Sem fonte'],
+        'NAO_OMIE':      ['error','❌ Não no Omie'],
+    };
+    const [cls, lbl] = m[st] || ['info', st || '—'];
+    return `<span class="conc-status-${cls}">${lbl}</span>`;
+}
+
+async function concCarregarTudo() {
+    _concPage = 1; _concSort = 'emissao'; _concOrder = 'desc';
+    // pre-fill dates: 2026-01-01 → today
+    const di = document.getElementById('conc-f-di');
+    const df = document.getElementById('conc-f-df');
+    if (di) di.value = '2026-01-01';
+    if (df) df.value = new Date().toISOString().slice(0, 10);
+    // Enter key on text fields triggers search
+    ['conc-f-busca'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && !el._enterBound) {
+            el.addEventListener('keydown', e => { if (e.key === 'Enter') { _concPage=1; concCarregarPendentes(); } });
+            el._enterBound = true;
+        }
+    });
+    concCarregarExtratos();
+    await concCarregarResumo();
+    await concCarregarContasOpts();
+    concCarregarPendentes();
+}
+
+async function concReconciliar() {
+    showToast('Recalculando reconciliação...', 'info');
+    try {
+        const r = await concFetch('/api/conciliacao/reconciliar', {method:'POST'});
+        const d = await r.json();
+        if (r.ok) { showToast(`Reconciliação concluída: ${d.resultados} resultados.`, 'success'); concCarregarResumo(); }
+        else { showToast('Erro ao recalcular.', 'error'); }
+    } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+async function concCarregarResumo() {
+    try {
+        const r = await concFetch('/api/conciliacao/resumo');
+        if (!r.ok) return;
+        const d = await r.json();
+        _concRenderKpis(d);
+    } catch(e) { console.warn('concResumo erro', e); }
+}
+
+function _concRenderKpis(d) {
+    const cielo = d.cielo || {};
+    const rede  = d.rede  || {};
+    const itau  = d.itau  || {};
+    const pend  = d.omie_pendentes || {};
+    const res   = d.resultados || {};
+
+    const difCielo = (cielo.total_liquido||0) - (itau.total_creditos_cielo||0);
+    const difRede  = (rede.total_liquido||0)  - (itau.total_creditos_rede||0);
+
+    const kpis = [
+        {label:'Bruto Cielo', value: _BRL(cielo.total_bruto),  cls: 'ok'},
+        {label:'Líquido Cielo', value: _BRL(cielo.total_liquido), cls: 'ok'},
+        {label:'Créditos Cielo no Itaú', value: _BRL(itau.total_creditos_cielo), cls: Math.abs(difCielo) < 1 ? 'ok' : 'warn'},
+        {label:'Dif. Cielo-Itaú', value: _BRL(difCielo), cls: Math.abs(difCielo) < 1 ? 'ok' : 'error'},
+        {label:'Bruto Rede', value: _BRL(rede.total_bruto), cls: 'ok'},
+        {label:'Créditos Rede no Itaú', value: _BRL(itau.total_creditos_rede), cls: Math.abs(difRede) < 1 ? 'ok' : 'warn'},
+        {label:'Títulos Cielo Omie Pendentes', value: (pend.cielo?.qtd||0)+' títulos', cls: (pend.cielo?.qtd||0) === 0 ? 'ok' : 'error'},
+        {label:'Valor Pendente Cielo', value: _BRL(pend.cielo?.valor), cls: (pend.cielo?.valor||0) < 1 ? 'ok' : 'error'},
+        {label:'Títulos Rede Omie Pendentes', value: (pend.rede?.qtd||0)+' títulos', cls: (pend.rede?.qtd||0) === 0 ? 'ok' : 'warn'},
+        {label:'Cielo vs Itaú OK', value: (res.cielo_itau_ok||0)+' dias', cls: 'ok'},
+        {label:'Cielo vs Itaú Diverg.', value: (res.cielo_itau_div||0)+' dias', cls: (res.cielo_itau_div||0) === 0 ? 'ok' : 'error'},
+        {label:'Cielo sem título Omie', value: (res.cielo_omie_nao||0)+' dias', cls: (res.cielo_omie_nao||0) === 0 ? 'ok' : 'warn'},
+    ];
+    document.getElementById('conc-kpis').innerHTML = kpis.map(k =>
+        `<div class="conc-kpi ${k.cls}"><div class="kpi-label">${k.label}</div><div class="kpi-value">${k.value}</div></div>`
+    ).join('');
+}
+
+async function concCarregarExtratos() {
+    const el = document.getElementById('conc-extratos-lista');
+    try {
+        const r = await concFetch('/api/conciliacao/extratos');
+        if (!r.ok) { el.innerHTML = '<span style="color:#f77">Erro ao carregar extratos.</span>'; return; }
+        const rows = await r.json();
+        if (!rows.length) { el.innerHTML = '<span style="color:#888;">Nenhum extrato importado ainda.</span>'; return; }
+        el.innerHTML = rows.map(e =>
+            `<span class="conc-extrato-tag ${e.fonte}">
+                ${e.fonte.toUpperCase()} — ${e.qtd_registros||'?'} reg. — ${e.periodo_inicio||'?'} a ${e.periodo_fim||'?'}
+                <span style="opacity:.6;font-size:.7rem;">${(e.filename||'').substring(0,30)}</span>
+                <span style="cursor:pointer;opacity:.7;font-weight:700;margin-left:.2rem;" title="Excluir extrato" onclick="concExcluirExtrato(${e.id})">✕</span>
+            </span>`
+        ).join('');
+
+        // atualiza mini-histórico nos cards de entrada
+        const byFonte = { itau:[], cielo:[], rede:[], omie:[] };
+        rows.forEach(e => { if (byFonte[e.fonte]) byFonte[e.fonte].push(e); });
+        for (const [fonte, list] of Object.entries(byFonte)) {
+            const hist = document.getElementById('historico-'+fonte);
+            if (!hist) continue;
+            if (!list.length) { hist.textContent = 'Nenhum arquivo importado.'; continue; }
+            const last = list[0]; // já vem ordenado desc
+            hist.innerHTML = `Último: <strong>${_esc((last.filename||'').split('/').pop().substring(0,35))}</strong> — ${last.qtd_registros||0} reg. — ${last.periodo_inicio||'?'}`;
+        }
+    } catch(e) { el.innerHTML = '<span style="color:#f77">Erro de rede.</span>'; }
+}
+
+async function concExcluirExtrato(id) {
+    if (!confirm('Excluir este extrato? Os registros importados dele serão removidos.')) return;
+    try {
+        const r = await concFetch(`/api/conciliacao/extratos/${id}`, {method:'DELETE'});
+        if (!r.ok) { showToast('Erro ao excluir extrato.', 'error'); return; }
+        showToast('Extrato excluído.', 'success');
+        concCarregarTudo();
+    } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+// ── estado dos filtros de pendentes ───────────────────────────
+let _concSort = 'emissao', _concOrder = 'desc', _concPage = 1;
+let _concReqId = 0; // request deduplication counter
+
+function _concFiltros() {
+    const p = (id) => document.getElementById(id);
+    return {
+        fonte:           p('conc-pend-fonte')?.value ?? '',
+        apenas_pendentes:p('conc-pend-apenas')?.checked !== false,
+        data_inicio:     p('conc-f-di')?.value || '',
+        data_fim:        p('conc-f-df')?.value || '',
+        conta:           p('conc-f-conta')?.value || '',
+        busca:           p('conc-f-busca')?.value || '',
+        itau_ok:         p('conc-f-itau')?.value || '',
+        baixa:           p('conc-f-baixa')?.value || '',
+        sort:            _concSort,
+        order:           _concOrder,
+        page:            _concPage,
+        per_page:        50,
+    };
+}
+
+// quick-filter: sets a filter dropdown value and re-searches
+function _concFiltroRapido(field, value) {
+    const map = { itau_ok: 'conc-f-itau', baixa: 'conc-f-baixa', fonte: 'conc-pend-fonte', conta: 'conc-f-conta' };
+    const el = document.getElementById(map[field]);
+    if (el) el.value = value;
+    _concPage = 1;
+    concCarregarPendentes();
+}
+
+function _concSortBy(col) {
+    if (_concSort === col) { _concOrder = _concOrder === 'asc' ? 'desc' : 'asc'; }
+    else { _concSort = col; _concOrder = 'asc'; }
+    _concPage = 1;
+    concCarregarPendentes();
+}
+
+async function concCarregarContasOpts() {
+    const fonte = document.getElementById('conc-pend-fonte')?.value ?? '';
+    const el = document.getElementById('conc-f-conta');
+    if (!el) return;
+    try {
+        const r = await concFetch(`/api/conciliacao/contas-operadoras?fonte=${encodeURIComponent(fonte)}`);
+        const contas = await r.json();
+        const prev = el.value;
+        el.innerHTML = '<option value="">Todas as contas</option>' +
+            contas.map(c => `<option value="${_esc(c)}">${_esc(c)}</option>`).join('');
+        // restore previously selected value without firing change
+        if (prev && [...el.options].some(o => o.value === prev)) el.value = prev;
+    } catch(e) {}
+}
+
+async function concCarregarPendentes() {
+    const reqId = ++_concReqId;
+    const f = _concFiltros();
+    const el = document.getElementById('conc-pend-tabela');
+    el.innerHTML = '<div style="color:#888;padding:1rem;">Carregando...</div>';
+
+    const params = new URLSearchParams();
+    Object.entries(f).forEach(([k,v]) => {
+        if (k === 'apenas_pendentes') { params.set(k, v ? 'true' : 'false'); return; }
+        if (v !== '' && v !== false && v !== null && v !== undefined) params.set(k, v);
+    });
+
+    try {
+        const r = await concFetch('/api/conciliacao/titulos-pendentes?' + params);
+        if (_concReqId !== reqId) return; // stale response — a newer request is already in flight
+        if (!r.ok) { el.innerHTML = '<div style="color:#f77">Erro ao carregar.</div>'; return; }
+        const d = await r.json();
+        // se a página solicitada ultrapassou o total de páginas, vai pra 1
+        if (d.total > 0 && d.page > d.pages) { _concPage = 1; concCarregarPendentes(); return; }
+        const rows = d.items || [];
+
+        const arrowFor = col => col === _concSort ? (_concOrder === 'asc' ? ' ↑' : ' ↓') : '';
+
+        el.innerHTML = `
+        <!-- Legenda de status -->
+        <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:.75rem;font-size:.76rem;">
+            <span style="font-weight:600;color:var(--text-secondary);margin-right:.25rem;">Legenda:</span>
+            <span class="conc-status-ok">✅ Itaú confirmado</span><span style="color:var(--text-secondary);font-size:.73rem;margin-left:.15rem;">— crédito recebido no banco nessa data</span>
+            <span class="conc-status-warn" style="margin-left:.5rem;">⚠️ Não confirmado</span><span style="color:var(--text-secondary);font-size:.73rem;margin-left:.15rem;">— data não encontrada no extrato Itaú</span>
+            <span class="conc-status-info" style="margin-left:.5rem;">🔵 Marcado</span><span style="color:var(--text-secondary);font-size:.73rem;margin-left:.15rem;">— anotado internamente para baixar no Omie</span>
+        </div>
+
+        <!-- Barra de totais -->
+        <div style="display:flex;gap:1.5rem;flex-wrap:wrap;background:var(--bg-secondary);border-radius:8px;padding:.6rem 1rem;margin-bottom:.75rem;font-size:.83rem;">
+            <span>📋 <strong>${d.total}</strong> títulos</span>
+            <span>💰 Pendente: <strong style="color:#e57373;">${_BRL(d.total_pendente)}</strong></span>
+            <span>✅ Marcados: <strong style="color:#81c784;">${d.total_marcados}</strong></span>
+            <span style="margin-left:auto;color:var(--text-secondary);">Pág. ${d.page}/${d.pages}</span>
+        </div>
+
+        <div style="overflow-x:auto;">
+        <table class="conc-table">
+            <thead><tr>
+                <th style="cursor:pointer;" onclick="_concSortBy('cliente')">Cliente${arrowFor('cliente')}</th>
+                <th style="cursor:pointer;" onclick="_concSortBy('emissao')">Emissão${arrowFor('emissao')}</th>
+                <th style="cursor:pointer;" onclick="_concSortBy('vencimento')">Vencimento${arrowFor('vencimento')}</th>
+                <th style="cursor:pointer;" onclick="_concSortBy('conta')">Conta${arrowFor('conta')}</th>
+                <th style="cursor:pointer;text-align:right;" onclick="_concSortBy('valor_total')">Valor${arrowFor('valor_total')}</th>
+                <th style="cursor:pointer;text-align:right;" onclick="_concSortBy('pago')">Pago${arrowFor('pago')}</th>
+                <th style="cursor:pointer;text-align:right;" onclick="_concSortBy('valor')">Pendente${arrowFor('valor')}</th>
+                <th style="cursor:pointer;" onclick="_concFiltroRapido('itau_ok','')" title="Clique para limpar filtro Itaú">Itaú ↕</th>
+                <th style="cursor:pointer;" onclick="_concFiltroRapido('baixa','')" title="Clique para limpar filtro Baixa">Baixa ↕</th>
+            </tr></thead>
+            <tbody>
+            ${rows.length ? rows.map(t => `
+                <tr id="conc-row-${t.id}">
+                    <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${_esc(t.cliente)}">${_esc((t.cliente||'—').substring(0,38))}</td>
+                    <td style="white-space:nowrap;font-size:.8rem;">${t.data_emissao||'—'}</td>
+                    <td style="white-space:nowrap;font-size:.8rem;">${t.data_vencimento||'—'}</td>
+                    <td style="font-size:.73rem;white-space:nowrap;cursor:pointer;" onclick="_concFiltroRapido('conta','${_esc(t.conta_operadora||'')}')" title="Filtrar por esta conta">${_esc(t.conta_operadora||'—')}</td>
+                    <td style="text-align:right;white-space:nowrap;">${_BRL(t.valor)}</td>
+                    <td style="text-align:right;white-space:nowrap;">${_BRL(t.valor_pago)}</td>
+                    <td style="text-align:right;white-space:nowrap;font-weight:700;${t.valor_pendente>0?'color:#e57373':''}">${_BRL(t.valor_pendente)}</td>
+                    <td style="white-space:nowrap;">
+                        ${t.itau_confirmado
+                            ? `<span class="conc-status-ok" style="cursor:pointer;" onclick="_concFiltroRapido('itau_ok','sim')" title="Filtrar: só Itaú confirmado · R$ ${(t.itau_valor_data||0).toLocaleString('pt-BR',{minimumFractionDigits:2})} nessa data">✅ OK</span>`
+                            : `<span class="conc-status-warn" style="cursor:pointer;" onclick="_concFiltroRapido('itau_ok','nao')" title="Filtrar: sem confirmação Itaú">⚠️ Pend.</span>`}
+                    </td>
+                    <td style="white-space:nowrap;">
+                        <button class="conc-btn-baixa ${t.marcado_baixa?'sim':'nao'}"
+                                onclick="concToggleBaixa(${t.id}, ${!t.marcado_baixa})"
+                                title="${t.marcado_baixa ? '🔵 Marcado por '+_esc(t.marcado_por||'?')+' em '+_esc(t.marcado_em||'?') : 'Marcar para baixa no Omie'}">
+                            ${t.marcado_baixa ? '🔵 Marcado' : 'Marcar'}
+                        </button>
+                    </td>
+                </tr>`).join('')
+            : '<tr><td colspan="9" style="text-align:center;color:#888;padding:1.5rem;">Nenhum título encontrado com esses filtros.</td></tr>'}
+            </tbody>
+        </table>
+        </div>
+
+        <!-- Paginação -->
+        ${d.pages > 1 ? `
+        <div style="display:flex;gap:.35rem;justify-content:center;margin-top:1rem;flex-wrap:wrap;">
+            <button class="conc-tab${d.page===1?' active':''}" onclick="_concGoPage(1)" ${d.page===1?'disabled':''}>«</button>
+            ${Array.from({length:d.pages},(_,i)=>i+1).map(p =>
+                `<button class="conc-tab${p===d.page?' active':''}" onclick="_concGoPage(${p})">${p}</button>`
+            ).join('')}
+            <button class="conc-tab${d.page===d.pages?' active':''}" onclick="_concGoPage(${d.pages})" ${d.page===d.pages?'disabled':''}>»</button>
+        </div>` : ''}`;
+    } catch(e) { el.innerHTML = `<div style="color:#f77">Erro: ${e.message}</div>`; }
+}
+
+function _concGoPage(p) { _concPage = p; concCarregarPendentes(); }
+
+async function concToggleBaixa(id, marcar) {
+    try {
+        const r = await concFetch(`/api/conciliacao/titulos/${id}/marcar-baixa`, {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({marcar}),
+        });
+        if (!r.ok) { showToast('Erro ao marcar baixa', 'error'); return; }
+        const row = document.getElementById(`conc-row-${id}`);
+        if (row) {
+            const btn = row.querySelector('.conc-btn-baixa');
+            if (btn) { btn.className = `conc-btn-baixa ${marcar?'sim':'nao'}`; btn.textContent = marcar ? '🔵 Marcado' : 'Marcar'; btn.setAttribute('onclick',`concToggleBaixa(${id},${!marcar})`); }
+        }
+        showToast(marcar ? 'Marcado para baixa!' : 'Desmarcado.', 'success');
+        concCarregarResumo();
+    } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+}
+
+async function concMarcarTodos() {
+    const f = _concFiltros();
+    const params = new URLSearchParams({...f, itau_ok:'sim', baixa:'nao', per_page:500, page:1});
+    const r = await concFetch('/api/conciliacao/titulos-pendentes?' + params);
+    const d = await r.json();
+    const confirmados = d.items || [];
+    if (!confirmados.length) { showToast('Nenhum novo título com Itaú confirmado para marcar.', 'info'); return; }
+    let ok = 0;
+    for (const t of confirmados) {
+        const res = await concFetch(`/api/conciliacao/titulos/${t.id}/marcar-baixa`, {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({marcar:true}),
+        });
+        if (res.ok) ok++;
+    }
+    showToast(`${ok} títulos marcados para baixa!`, 'success');
+    _concPage = 1;
+    concCarregarPendentes();
+    concCarregarResumo();
+}
+
+async function concCarregarDias(tipo, fonte, elId) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    el.innerHTML = '<div style="color:#888;padding:1rem;">Carregando...</div>';
+    try {
+        const r = await concFetch(`/api/conciliacao/dias?tipo=${tipo}&fonte=${fonte}`);
+        if (!r.ok) { el.innerHTML = '<div style="color:#f77">Erro.</div>'; return; }
+        const rows = await r.json();
+        if (!rows.length) { el.innerHTML = '<div style="color:#888;padding:1rem;">Sem dados. Importe os extratos primeiro.</div>'; return; }
+        const destLbl = tipo === 'vs_itau' ? 'Itaú' : 'Omie';
+        el.innerHTML = `
+        <div style="overflow-x:auto;">
+        <table class="conc-table">
+            <thead><tr>
+                <th>Data</th><th>Qtd</th><th>Valor Fonte</th><th>Valor ${destLbl}</th><th>Diferença</th><th>Status</th>
+            </tr></thead>
+            <tbody>
+            ${rows.map(r=>`<tr>
+                <td style="white-space:nowrap;">${r.data||'—'}</td>
+                <td style="text-align:right;">${r.qtd_fonte||0}</td>
+                <td style="text-align:right;white-space:nowrap;">${_BRL(r.valor_fonte)}</td>
+                <td style="text-align:right;white-space:nowrap;">${_BRL(r.valor_destino)}</td>
+                <td style="text-align:right;white-space:nowrap;${Math.abs(r.diferenca||0)>0.1?'font-weight:600;color:'+(r.diferenca>0?'#81c784':'#e57373'):''}">${_BRL(r.diferenca)}</td>
+                <td>${_concStatusBadge(r.status)}</td>
+            </tr>`).join('')}
+            </tbody>
+        </table></div>
+        <div style="font-size:.8rem;color:#888;margin-top:.5rem;">${rows.length} dias · ${rows.filter(r=>r.status==='OK').length} OK · ${rows.filter(r=>r.status==='DIVERGENCIA'||r.status==='SEM_ITAU'||r.status==='NAO_OMIE').length} atenção</div>`;
+    } catch(e) { el.innerHTML = `<div style="color:#f77">Erro: ${e.message}</div>`; }
+}
+
+function _concLimparFiltros() {
+    const di = document.getElementById('conc-f-di'); if (di) di.value = '2026-01-01';
+    const df = document.getElementById('conc-f-df'); if (df) df.value = new Date().toISOString().slice(0,10);
+    ['conc-f-busca'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    ['conc-f-conta','conc-f-itau','conc-f-baixa'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    const ap = document.getElementById('conc-pend-apenas'); if (ap) ap.checked = true;
+    _concPage = 1; _concSort = 'emissao'; _concOrder = 'desc';
+    concCarregarPendentes();
+}
+
+function concTab(btn) {
+    document.querySelectorAll('#conc-root .conc-tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#conc-root .conc-pane').forEach(p => p.style.display = 'none');
+    btn.classList.add('active');
+    const tab = btn.getAttribute('data-tab');
+    const pane = document.getElementById('conc-pane-' + tab);
+    if (pane) pane.style.display = '';
+
+    if (tab === 'pendentes')     { concCarregarContasOpts(); _concPage = 1; concCarregarPendentes(); }
+    if (tab === 'vs-itau-cielo') concCarregarDias('vs_itau','cielo','conc-dias-cielo-itau');
+    if (tab === 'vs-omie-cielo') concCarregarDias('vs_omie','cielo','conc-dias-cielo-omie');
+    if (tab === 'vs-itau-rede')  concCarregarDias('vs_itau','rede','conc-dias-rede-itau');
+    if (tab === 'vs-omie-rede')  concCarregarDias('vs_omie','rede','conc-dias-rede-omie');
+}
+
+// Upload drag-and-drop
+function concDragOverFonte(e, fonte) { e.preventDefault(); document.getElementById('drop-'+fonte)?.classList.add('conc-drop-hover'); }
+function concDragLeaveFonte(e, fonte) { document.getElementById('drop-'+fonte)?.classList.remove('conc-drop-hover'); }
+function concDropFonte(e, fonte) {
+    e.preventDefault();
+    document.getElementById('drop-'+fonte)?.classList.remove('conc-drop-hover');
+    concUploadFonte(fonte, e.dataTransfer.files);
+}
+
+async function concUploadFonte(fonte, files) {
+    const status = document.getElementById('status-'+fonte);
+    if (!status) return;
+    const arr = Array.from(files);
+    status.innerHTML = `<span style="color:#888;">Enviando ${arr.length} arquivo(s)...</span>`;
+    let ok = 0;
+    for (const f of arr) {
+        const fd = new FormData();
+        fd.append('file', f);
+        fd.append('fonte', fonte);
+        try {
+            const r = await concFetch('/api/conciliacao/upload', {method:'POST', body:fd});
+            const d = await r.json();
+            if (!r.ok) {
+                const msg = d.detail || 'Erro desconhecido';
+                const isDup = r.status === 409;
+                status.innerHTML += `<div style="color:${isDup?'#ffb74d':'#f77'};">${isDup?'⚠️':'❌'} ${_esc(f.name)}: ${_esc(msg)}</div>`;
+            } else {
+                ok++;
+                status.innerHTML = `<div style="color:#81c784;">✅ ${_esc(f.name)} — ${d.registros} registros importados</div>`;
+            }
+        } catch(e) {
+            status.innerHTML += `<div style="color:#f77;">❌ ${_esc(f.name)}: ${_esc(e.message)}</div>`;
+        }
+    }
+    if (ok > 0) {
+        showToast(`Arquivo ${fonte.toUpperCase()} importado!`, 'success');
+        concCarregarTudo();
+    }
+}
+
+async function concOmieApi() {
+    showToast('Integração OMIE via API em desenvolvimento.', 'info');
+}
+
+document.addEventListener('DOMContentLoaded', () => { concCarregarTudo(); });
+</script>
+{% endblock %}
+</content>
+</invoke>

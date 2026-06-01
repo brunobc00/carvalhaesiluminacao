@@ -13,9 +13,11 @@ load_dotenv()
 from database import engine, SessionLocal, Base
 from models import Produto, Orcamento, AdminUser
 from routers import produtos, orcamentos, admin
-from routers import fornecedores, sheets, orcamento_gen, google_auth, orcamento_ui
+from routers import fornecedores, sheets, orcamento_gen, google_auth, orcamento_ui, conciliacao
 from webhook import router as webhook_router
 from templates_config import templates
+from version_utils import read_version, parse_changelog
+from auth import COOKIE_NAME, verify_session_cookie
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s — %(message)s")
 logger = logging.getLogger(__name__)
@@ -52,9 +54,28 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Carvalhaes Iluminacao",
     description="Site de catalogo de luminárias",
-    version="1.0.0",
+    version=read_version(),
     lifespan=lifespan,
 )
+app.state.version = read_version()
+
+
+# Identifica quem está logado para o badge do cabeçalho (todas as páginas).
+# Prioriza o login admin (cookie assinado); senão, o e-mail do Cloudflare Access.
+@app.middleware("http")
+async def identify_user(request: Request, call_next):
+    user = None
+    token = request.cookies.get(COOKIE_NAME)
+    if token:
+        try:
+            user = verify_session_cookie(token)
+        except Exception:
+            user = None
+    if not user:
+        user = request.headers.get("Cf-Access-Authenticated-User-Email")
+    request.state.user = user
+    return await call_next(request)
+
 
 # Static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -75,6 +96,7 @@ app.include_router(sheets.router)
 app.include_router(orcamento_gen.router)
 app.include_router(google_auth.router)
 app.include_router(orcamento_ui.router)
+app.include_router(conciliacao.router)
 
 
 # ─────────────────────────────────────────────
@@ -96,6 +118,17 @@ def index(request: Request):
         db.close()
     return templates.TemplateResponse(request, "index.html", {
         "destaques": destaques,
+    })
+
+
+# ─────────────────────────────────────────────
+# Histórico de versões (changelog)
+# ─────────────────────────────────────────────
+
+@app.get("/versoes", response_class=HTMLResponse)
+def versoes(request: Request):
+    return templates.TemplateResponse(request, "versoes.html", {
+        "releases": parse_changelog(),
     })
 
 

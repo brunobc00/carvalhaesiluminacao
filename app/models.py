@@ -1,6 +1,6 @@
 from datetime import datetime
 from sqlalchemy import (
-    Column, Integer, String, Text, Numeric, Boolean, DateTime, ForeignKey,
+    Column, Integer, String, Text, Numeric, Boolean, DateTime, Date, ForeignKey,
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -122,3 +122,97 @@ class GoogleToken(Base):
     access_token  = Column(Text, nullable=False)
     refresh_token = Column(Text)
     updated_at    = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
+# ─────────────────────────────────────────────
+# Conciliação Financeira (migrado de com.automacaobbc.ia — DB carvalhaes)
+# ─────────────────────────────────────────────
+
+class ConciliacaoExtrato(Base):
+    __tablename__ = "conciliacao_extratos"
+
+    id              = Column(Integer, primary_key=True, autoincrement=True)
+    fonte           = Column(String(20), nullable=False)   # 'cielo' | 'rede' | 'itau' | 'omie'
+    filename        = Column(String(500))
+    periodo_inicio  = Column(DateTime)
+    periodo_fim     = Column(DateTime)
+    qtd_registros   = Column(Integer)
+    importado_em    = Column(DateTime, server_default=func.now())
+    importado_por   = Column(String(200))
+
+    transacoes      = relationship("ConciliacaoTransacao",   back_populates="extrato", cascade="all, delete-orphan")
+    itau_lancamentos= relationship("ConciliacaoItau",        back_populates="extrato", cascade="all, delete-orphan")
+    omie_titulos    = relationship("ConciliacaoOmieTitulo",  back_populates="extrato", cascade="all, delete-orphan")
+
+
+class ConciliacaoTransacao(Base):
+    __tablename__ = "conciliacao_transacoes"
+
+    id               = Column(Integer, primary_key=True, autoincrement=True)
+    extrato_id       = Column(Integer, ForeignKey("conciliacao_extratos.id", ondelete="CASCADE"))
+    fonte            = Column(String(10), nullable=False)   # 'cielo' | 'rede'
+    data_venda       = Column(DateTime)
+    data_pagamento   = Column(DateTime)
+    tipo             = Column(String(150))
+    forma_pagamento  = Column(String(150))
+    bandeira         = Column(String(50))
+    valor_bruto      = Column(Numeric(12, 2))
+    taxa             = Column(Numeric(12, 2))
+    valor_liquido    = Column(Numeric(12, 2))
+    taxa_pct_real    = Column(Numeric(8, 4))
+    status_pagamento = Column(String(50))
+    nsu_doc          = Column(String(100))
+    codigo_venda     = Column(String(100))
+
+    extrato = relationship("ConciliacaoExtrato", back_populates="transacoes")
+
+
+class ConciliacaoItau(Base):
+    __tablename__ = "conciliacao_itau"
+
+    id               = Column(Integer, primary_key=True, autoincrement=True)
+    extrato_id       = Column(Integer, ForeignKey("conciliacao_extratos.id", ondelete="CASCADE"))
+    data             = Column(DateTime)
+    lancamento       = Column(String(300))
+    razao_social     = Column(String(300))
+    valor            = Column(Numeric(12, 2))
+    fonte_operadora  = Column(String(20))  # 'cielo' | 'rede' | 'outros'
+
+    extrato = relationship("ConciliacaoExtrato", back_populates="itau_lancamentos")
+
+
+class ConciliacaoOmieTitulo(Base):
+    __tablename__ = "conciliacao_omie_titulos"
+
+    id               = Column(Integer, primary_key=True, autoincrement=True)
+    extrato_id       = Column(Integer, ForeignKey("conciliacao_extratos.id", ondelete="CASCADE"))
+    cliente          = Column(String(500))
+    data_emissao     = Column(DateTime)
+    data_vencimento  = Column(DateTime)
+    conta_operadora  = Column(String(100))
+    fonte_operadora  = Column(String(20))   # 'cielo' | 'rede'
+    forma_pagamento  = Column(String(100))
+    valor            = Column(Numeric(12, 2))
+    valor_pago       = Column(Numeric(12, 2))
+    valor_pendente   = Column(Numeric(12, 2))
+    conciliado       = Column(Boolean, default=False)
+    marcado_baixa    = Column(Boolean, default=False)
+    marcado_em       = Column(DateTime)
+    marcado_por      = Column(String(200))
+
+    extrato = relationship("ConciliacaoExtrato", back_populates="omie_titulos")
+
+
+class ConciliacaoResultado(Base):
+    __tablename__ = "conciliacao_resultados"
+
+    id             = Column(Integer, primary_key=True, autoincrement=True)
+    fonte          = Column(String(10), nullable=False)  # 'cielo' | 'rede'
+    tipo           = Column(String(20), nullable=False)  # 'vs_itau' | 'vs_omie'
+    data           = Column(DateTime)
+    qtd_fonte      = Column(Integer)
+    valor_fonte    = Column(Numeric(12, 2))
+    valor_destino  = Column(Numeric(12, 2))
+    diferenca      = Column(Numeric(12, 2))
+    status         = Column(String(20))
+    calculado_em   = Column(DateTime, server_default=func.now())

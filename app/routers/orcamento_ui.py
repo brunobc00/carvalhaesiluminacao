@@ -26,3 +26,8 @@ def fornecedores(request: Request, admin: str = Depends(require_admin)):
 @router.get("/catalogo")
 def catalogo(request: Request, admin: str = Depends(require_admin)):
     return templates.TemplateResponse(request, "admin/catalogo.html", {"admin": admin})
+
+
+@router.get("/conciliacao")
+def conciliacao(request: Request, admin: str = Depends(require_admin)):
+    return templates.TemplateResponse(request, "admin/conciliacao.html", {"admin": admin})

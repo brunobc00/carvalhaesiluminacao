@@ -42,6 +42,10 @@ def _get_session(request: Request) -> dict | None:
     return {"email": _connected_google_email() or "", "name": username, "paginas": ["*"]}
 
 
+def _is_admin(session: dict) -> bool:
+    return "*" in (session or {}).get("paginas", [])
+
+
 def _connected_google_email() -> str | None:
     """E-mail da conta Google conectada mais recentemente (para o gerador via Sheets)."""
     with get_session() as s:

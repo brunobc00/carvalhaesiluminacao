@@ -1,0 +1,9 @@
+{# Badge padrão (canto superior direito): usuário logado + versão → /versoes #}
+<a href="/versoes" title="Histórico de versões"
+   class="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-800 transition-colors whitespace-nowrap">
+  {% if request.state.user %}
+    <span class="font-medium text-gray-700 max-w-[10rem] truncate">{{ request.state.user }}</span>
+    <span class="text-gray-300">·</span>
+  {% endif %}
+  <span class="px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 font-mono">v{{ app_version }}</span>
+</a>
