@@ -42,6 +42,11 @@ def _get_session(request: Request) -> dict | None:
     return {"email": _connected_google_email() or "", "name": username, "paginas": ["*"]}
 
 
+def require_session(admin: str = Depends(require_admin)) -> dict:
+    """Equivalente ao require_session do ia: exige admin e devolve um session dict."""
+    return {"email": _connected_google_email() or "", "name": admin, "paginas": ["*"]}
+
+
 def _is_admin(session: dict) -> bool:
     return "*" in (session or {}).get("paginas", [])
 

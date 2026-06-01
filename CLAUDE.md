@@ -13,6 +13,7 @@ Site/painel da **Carvalhaes Iluminação**: catálogo de produtos + **workspace 
 - **Gerador de Orçamentos** (`/admin/orcamento`): planilha (Google Sheets via OAuth, ou colar texto) → itens → PDF. Backend: `routers/sheets.py` + `routers/orcamento_gen.py`; PDF via `scripts/gerar_orcamento.py` (WeasyPrint), com `assets/`, `templates/orcamento.css` e `dados_empresa.json`.
 - **Fornecedores** (`/admin/fornecedores`): CRUD de fornecedores + upload/processamento de tabelas de preço (`routers/fornecedores.py`). Parsing por pandas/pdfplumber; fallback de visão via Ollama no host (`host.docker.internal:11434`).
 - **Catálogo** (`/admin/catalogo`): busca no catálogo de produtos extraídos das tabelas.
+- **Conciliação Financeira** (`/admin/conciliacao`): importa extratos Cielo/Rede/Itaú/Omie (xlsx) e reconcilia (`routers/conciliacao.py`, pandas). Modelos `Conciliacao*`. Migrado do ia em jun/2026.
 - Modelos: `Fornecedor`, `TabelaPreco`, `ProdutoTabela`, `GoogleToken` em `app/models.py`.
 - Shim de auth/deps: `app/orcamento_deps.py` (mapeia o antigo `deps.require_page` → `auth.require_admin`).
 - **Google OAuth (modo Link):** usa o OAuth client do projeto GCP do ia; o redirect_uri `https://carvalhaesiluminacao.automacaobbc.com/api/auth/google/callback` precisa estar cadastrado no console do Google.
