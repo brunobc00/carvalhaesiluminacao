@@ -1,6 +1,6 @@
 from datetime import datetime
 from sqlalchemy import (
-    Column, Integer, String, Text, Numeric, Boolean, DateTime, Date, ForeignKey,
+    Column, Integer, String, Text, Numeric, Boolean, DateTime, Date, ForeignKey, JSON,
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -179,6 +179,8 @@ class ConciliacaoItau(Base):
     fonte_operadora  = Column(String(20))  # 'cielo' | 'rede' | 'outros'
     tipo             = Column(String(40))   # origin.type (PIX/SAD/...) — extrato cru via API
     documento        = Column(String(40))   # literal.code — extrato cru via API
+    evento_id        = Column(String(64), index=True)  # id do evento na API Itaú (dedup)
+    raw              = Column(JSON)          # evento cru completo (regra de ouro: nada se perde)
 
     extrato = relationship("ConciliacaoExtrato", back_populates="itau_lancamentos")
 

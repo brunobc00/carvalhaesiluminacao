@@ -66,6 +66,20 @@ def _classificar(lancamento: str) -> str:
     return "outros"
 
 
+def _flatten(prefix: str, obj, out: dict) -> None:
+    """Achata o evento (dicts aninhados) em pares chave->valor escalar.
+    Ex.: counterpart.name -> counterpart_name. Listas viram JSON string."""
+    import json as _json
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            key = f"{prefix}_{k}" if prefix else str(k)
+            _flatten(key, v, out)
+    elif isinstance(obj, list):
+        out[prefix] = _json.dumps(obj, ensure_ascii=False)
+    else:
+        out[prefix] = obj
+
+
 def _parse_evento(ev: dict) -> dict | None:
     """Normaliza um evento da API para o formato de ConciliacaoItau."""
     lit = ev.get("literal") or {}
@@ -98,6 +112,9 @@ def _parse_evento(ev: dict) -> dict | None:
         tipo = "Crédito" if not op.startswith("D") else "Débito"
     documento = (lit.get("code") or "").strip()
 
+    flat: dict = {}
+    _flatten("", ev, flat)
+
     return {
         "data": data,
         "lancamento": lancamento[:300],
@@ -106,6 +123,9 @@ def _parse_evento(ev: dict) -> dict | None:
         "fonte_operadora": _classificar(lancamento),
         "tipo": tipo[:40],
         "documento": documento[:40],
+        "evento_id": (ev.get("id") or "")[:64] or None,
+        "raw": ev,
+        "flat": flat,
     }
 
 

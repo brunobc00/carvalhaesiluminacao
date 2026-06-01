@@ -19,3 +19,4 @@ Pillow
 weasyprint
 Markdown
 beautifulsoup4
+APScheduler

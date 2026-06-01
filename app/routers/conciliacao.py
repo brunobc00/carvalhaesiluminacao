@@ -427,50 +427,39 @@ class ItauApiImportBody(BaseModel):
 
 @router.post("/api/conciliacao/itau/importar-api")
 async def importar_itau_api(body: ItauApiImportBody, request: Request):
-    """Importa o extrato Itaú via API (mTLS) direto para a conciliação (fonte='itau')."""
-    sess = _require(request)
-    email = sess.get("email", "desconhecido")
-
-    from itau_client import fetch_eventos, ItauError
+    """Importa o extrato Itaú de um intervalo (idempotente, dedup por id do evento)."""
+    _require(request)
+    import itau_store
+    from itau_client import ItauError
     try:
-        eventos = fetch_eventos(body.date_from, body.date_to)
+        r = itau_store.importar_periodo(body.date_from, body.date_to)
     except ItauError as e:
         raise HTTPException(502, str(e))
     except Exception as e:
         raise HTTPException(500, f"Erro inesperado na API Itaú: {e}")
+    return {"ok": True, "fonte": "itau", "novos": r["novos"], "total_periodo": r["total_periodo"]}
 
-    if not eventos:
-        return {"ok": True, "fonte": "itau", "registros": 0, "resultados_calculados": 0,
-                "msg": "Nenhum lançamento no período."}
 
-    filename = f"API Itaú {body.date_from} a {body.date_to}"
-    with get_session() as s:
-        extrato = ConciliacaoExtrato(fonte="itau", filename=filename, importado_por=email)
-        s.add(extrato)
-        s.flush()
-        eid = extrato.id
-        datas = []
-        for ev in eventos:
-            s.add(ConciliacaoItau(
-                extrato_id=eid,
-                data=ev["data"],
-                lancamento=ev["lancamento"],
-                razao_social=ev["razao_social"],
-                valor=ev["valor"],
-                fonte_operadora=ev["fonte_operadora"],
-                tipo=ev.get("tipo"),
-                documento=ev.get("documento"),
-            ))
-            if ev["data"]:
-                datas.append(ev["data"])
-        extrato.qtd_registros = len(eventos)
-        if datas:
-            extrato.periodo_inicio = min(datas)
-            extrato.periodo_fim = max(datas)
-        s.commit()
-        n = _reconciliar(s)
+@router.post("/api/conciliacao/itau/atualizar")
+async def atualizar_itau(request: Request):
+    """Sincroniza o recente (últimos ~40 dias). Chamado ao abrir a página do Itaú."""
+    _require(request)
+    import itau_store
+    try:
+        return {"ok": True, **itau_store.sincronizar(full=False)}
+    except Exception as e:
+        raise HTTPException(502, f"Falha ao sincronizar Itaú: {e}")
 
-    return {"ok": True, "fonte": "itau", "registros": len(eventos), "resultados_calculados": n}
+
+@router.post("/api/conciliacao/itau/backfill")
+async def backfill_itau(request: Request):
+    """Varre o histórico mês a mês até o Itaú parar de responder (idempotente)."""
+    _require(request)
+    import itau_store
+    try:
+        return {"ok": True, **itau_store.sincronizar(full=True)}
+    except Exception as e:
+        raise HTTPException(502, f"Falha no backfill Itaú: {e}")
 
 
 @router.get("/api/conciliacao/itau/extrato")

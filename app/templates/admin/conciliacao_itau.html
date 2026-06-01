@@ -19,6 +19,10 @@
     <label class="flex flex-col gap-1 text-xs text-gray-500">Valor máx.
       <input type="number" step="0.01" id="f-vmax" class="border rounded px-2 py-1 w-28 text-gray-800"></label>
     <button id="f-limpar" class="px-3 py-1.5 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs">Limpar</button>
+    <span class="flex-1"></span>
+    <button id="b-backfill" class="px-3 py-1.5 rounded bg-amber-100 hover:bg-amber-200 text-amber-800 text-xs"
+            title="Busca todo o histórico disponível, mês a mês, até o Itaú parar de responder">⬇ Backfill histórico</button>
+    <span id="sync-status" class="text-xs text-gray-400"></span>
   </div>
 
   <!-- Tabela -->
@@ -106,11 +110,41 @@ function render(){
   document.getElementById('resumo').textContent = `${rows.length} lançamento(s) · saldo dos exibidos: ${fmtBRL(soma)}`;
 }
 
+function ymd(d){ return d.toISOString().slice(0,10); }
+function setDefaults(){
+  const hoje=new Date(); const mesAtras=new Date(); mesAtras.setMonth(mesAtras.getMonth()-1);
+  document.getElementById('f-ate').value = ymd(hoje);
+  document.getElementById('f-de').value  = ymd(mesAtras);
+}
+async function atualizar(){
+  const st=document.getElementById('sync-status'); st.textContent='sincronizando…';
+  try{
+    const r=await fetch('/api/conciliacao/itau/atualizar',{method:'POST',credentials:'same-origin'});
+    const d=await r.json();
+    st.textContent = r.ok ? (d.novos!=null? `+${d.novos} novo(s)`:'atualizado') : 'falha ao sincronizar';
+    if(r.ok) await carregar();
+  }catch(e){ st.textContent='falha ao sincronizar'; }
+  setTimeout(()=>{ st.textContent=''; }, 5000);
+}
+async function backfill(){
+  if(!confirm('Buscar TODO o histórico disponível no Itaú (mês a mês)? Pode levar alguns minutos.')) return;
+  const b=document.getElementById('b-backfill'), st=document.getElementById('sync-status');
+  b.disabled=true; const t=b.textContent; b.textContent='⏳ buscando histórico…'; st.textContent='';
+  try{
+    const r=await fetch('/api/conciliacao/itau/backfill',{method:'POST',credentials:'same-origin'});
+    const d=await r.json();
+    st.textContent = r.ok ? `histórico: ${d.meses} mês(es), +${d.novos} lançamento(s)` : (d.detail||'falha');
+    if(r.ok) await carregar();
+  }catch(e){ st.textContent='falha no backfill'; }
+  finally{ b.disabled=false; b.textContent=t; }
+}
+
 document.querySelectorAll('#tbl th.th').forEach(th=>{
   th.addEventListener('click',()=>{ const k=th.dataset.k; if(k===sortK) sortDir*=-1; else { sortK=k; sortDir = (k==='data'?-1:1);} render(); });
 });
 ['f-de','f-ate','f-q','f-vmin','f-vmax'].forEach(id=>document.getElementById(id).addEventListener('input',render));
-document.getElementById('f-limpar').addEventListener('click',()=>{ ['f-de','f-ate','f-q','f-vmin','f-vmax'].forEach(id=>document.getElementById(id).value=''); render(); });
-document.addEventListener('DOMContentLoaded', carregar);
+document.getElementById('f-limpar').addEventListener('click',()=>{ setDefaults(); document.getElementById('f-q').value=''; document.getElementById('f-vmin').value=''; document.getElementById('f-vmax').value=''; render(); });
+document.getElementById('b-backfill').addEventListener('click', backfill);
+document.addEventListener('DOMContentLoaded', async ()=>{ setDefaults(); await carregar(); atualizar(); });
 </script>
 {% endblock %}

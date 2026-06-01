@@ -4,6 +4,17 @@ Todas as mudanças notáveis deste projeto são registradas aqui.
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 e este projeto segue [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [1.5.0] - 2026-06-01
+
+### Adicionado
+- **Sincronização do extrato Itaú** idempotente (dedup pelo id do evento): importação não duplica.
+- **Backfill mês a mês**: varre o histórico para trás até o Itaú parar de responder (botão "Backfill histórico").
+- **Job noturno** (APScheduler, 03:00) que roda o backfill automaticamente; e **sincronização ao abrir a página** do Itaú (últimos ~40 dias).
+- **Regra de ouro**: cada evento é salvo cru e completo na coluna JSON `raw`; e cada campo retornado pela API vira uma coluna `x_<campo>` criada automaticamente — nada se perde.
+
+### Alterado
+- Aba Extrato Itaú: período padrão = de hoje até 1 mês atrás.
+
 ## [1.4.0] - 2026-06-01
 
 ### Adicionado

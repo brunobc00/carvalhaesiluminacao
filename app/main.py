@@ -39,6 +39,18 @@ def seed_admin():
         db.close()
 
 
+_scheduler = None
+
+
+def _job_sync_itau():
+    try:
+        import itau_store
+        r = itau_store.sincronizar(full=True)
+        logger.info("Job noturno Itaú: %s", r)
+    except Exception as e:
+        logger.warning("Job noturno Itaú falhou: %s", e)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
@@ -46,8 +58,22 @@ async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
     logger.info("Tabelas criadas.")
     seed_admin()
+    # Scheduler: backfill do extrato Itaú toda noite (03:00)
+    global _scheduler
+    try:
+        from apscheduler.schedulers.background import BackgroundScheduler
+        from apscheduler.triggers.cron import CronTrigger
+        _scheduler = BackgroundScheduler(timezone="America/Sao_Paulo")
+        _scheduler.add_job(_job_sync_itau, CronTrigger(hour=3, minute=0),
+                           id="sync_itau", replace_existing=True, misfire_grace_time=3600)
+        _scheduler.start()
+        logger.info("Scheduler iniciado (sync_itau 03:00).")
+    except Exception as e:
+        logger.warning("Scheduler não iniciado: %s", e)
     yield
     # Shutdown
+    if _scheduler:
+        _scheduler.shutdown(wait=False)
     logger.info("Aplicacao encerrada.")
 
 
