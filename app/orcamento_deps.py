@@ -31,15 +31,19 @@ def require_page(page: str):
 
 
 def _get_session(request: Request) -> dict | None:
-    """Retorna um 'session dict' compatível se o cookie admin for válido, senão None."""
+    """Session dict compatível se houver cookie admin válido OU e-mail autenticado
+    pelo Cloudflare Access (Zero Trust). Senão None."""
     token = request.cookies.get(COOKIE_NAME)
-    if not token:
-        return None
-    try:
-        username = verify_session_cookie(token)
-    except HTTPException:
-        return None
-    return {"email": _connected_google_email() or "", "name": username, "paginas": ["*"]}
+    if token:
+        try:
+            username = verify_session_cookie(token)
+            return {"email": _connected_google_email() or "", "name": username, "paginas": ["*"]}
+        except HTTPException:
+            pass
+    cf_email = request.headers.get("Cf-Access-Authenticated-User-Email")
+    if cf_email:
+        return {"email": _connected_google_email() or "", "name": cf_email, "paginas": ["*"]}
+    return None
 
 
 def require_session(admin: str = Depends(require_admin)) -> dict:

@@ -3,7 +3,7 @@ import logging
 from contextlib import asynccontextmanager
 
 import bcrypt
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
@@ -17,7 +17,7 @@ from routers import fornecedores, sheets, orcamento_gen, google_auth, orcamento_
 from webhook import router as webhook_router
 from templates_config import templates
 from version_utils import read_version, parse_changelog
-from auth import COOKIE_NAME, verify_session_cookie
+from auth import COOKIE_NAME, verify_session_cookie, require_admin
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s — %(message)s")
 logger = logging.getLogger(__name__)
@@ -127,9 +127,10 @@ def index(request: Request):
 # ─────────────────────────────────────────────
 
 @app.get("/versoes", response_class=HTMLResponse)
-def versoes(request: Request):
+def versoes(request: Request, admin: str = Depends(require_admin)):
     return templates.TemplateResponse(request, "versoes.html", {
         "releases": parse_changelog(),
+        "admin": admin,
     })
 
 

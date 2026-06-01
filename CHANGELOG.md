@@ -4,6 +4,15 @@ Todas as mudanças notáveis deste projeto são registradas aqui.
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 e este projeto segue [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [1.3.0] - 2026-06-01
+
+### Alterado
+- Login admin agora aceita o e-mail já autenticado pelo **Cloudflare Access** (header `Cf-Access-Authenticated-User-Email`): quem passa pelo Zero Trust entra no painel **sem digitar usuário/senha**. A senha continua como alternativa (acesso direto/local).
+- Página `/versoes` movida para **dentro do painel** (protegida por admin, com item no menu lateral).
+
+### Segurança
+- Histórico de versões (`/versoes`) e o badge de versão **não são mais exibidos no site público** — só no painel admin.
+
 ## [1.2.0] - 2026-06-01
 
 ### Adicionado

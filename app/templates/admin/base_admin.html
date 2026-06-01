@@ -92,6 +92,16 @@
                     </svg>
                     Conciliação Financeira
                 </a>
+
+                <a href="/versoes"
+                   class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                          {% block nav_versoes %}text-gray-400 hover:bg-gray-800 hover:text-white{% endblock %}">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Versões <span class="ml-auto text-[10px] font-mono text-gray-500">v{{ app_version }}</span>
+                </a>
             </div>
         </nav>
 

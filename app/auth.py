@@ -29,11 +29,18 @@ def verify_session_cookie(token: str) -> str:
 
 
 def require_admin(request: Request) -> str:
-    """Dependency que exige cookie de admin válido."""
+    """Exige admin. Aceita (1) cookie de sessão assinado ou (2) o e-mail já
+    autenticado pelo Cloudflare Access (header Cf-Access-Authenticated-User-Email).
+    Como o domínio inteiro está atrás do Zero Trust (só e-mails autorizados),
+    quem chega com esse header já é admin — não precisa digitar senha."""
     token = request.cookies.get(COOKIE_NAME)
-    if not token:
-        from fastapi.responses import RedirectResponse
-        # Lança redirect para login
-        raise HTTPException(status_code=302, detail="Redirect to login",
-                            headers={"Location": "/admin/login"})
-    return verify_session_cookie(token)
+    if token:
+        try:
+            return verify_session_cookie(token)
+        except HTTPException:
+            pass  # cookie inválido/expirado → tenta o Cloudflare
+    cf_email = request.headers.get("Cf-Access-Authenticated-User-Email")
+    if cf_email:
+        return cf_email
+    raise HTTPException(status_code=302, detail="Redirect to login",
+                        headers={"Location": "/admin/login"})
