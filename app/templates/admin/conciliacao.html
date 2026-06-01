@@ -197,14 +197,23 @@
                 <span style="font-size:1.5rem;">🏦</span>
                 <div>
                     <h3 style="margin:0;font-size:.95rem;">Banco Itaú</h3>
-                    <span style="font-size:.7rem;color:#888;background:rgba(128,128,128,.12);padding:.1rem .45rem;border-radius:4px;">🚧 API em desenvolvimento</span>
+                    <span style="font-size:.7rem;color:#1fff8c;background:rgba(31,255,140,.12);padding:.1rem .45rem;border-radius:4px;">🔌 API ativa (Carvalhaes)</span>
+                </div>
+            </div>
+            <!-- Importar via API (mTLS) -->
+            <div style="background:rgba(31,255,140,.06);border:1px solid rgba(31,255,140,.25);border-radius:8px;padding:.6rem;margin-bottom:.6rem;">
+                <div style="font-size:.78rem;font-weight:600;margin-bottom:.4rem;">Importar extrato via API</div>
+                <div style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:end;">
+                    <label style="font-size:.7rem;color:#aaa;">De<br><input type="date" id="itau-api-de" style="font-size:.78rem;padding:.25rem;"></label>
+                    <label style="font-size:.7rem;color:#aaa;">Até<br><input type="date" id="itau-api-ate" style="font-size:.78rem;padding:.25rem;"></label>
+                    <button class="btn-brand" id="itau-api-btn" onclick="concImportarItauApi()" style="font-size:.78rem;padding:.35rem .7rem;">⬇ Buscar</button>
                 </div>
             </div>
             <div class="conc-drop-zona" id="drop-itau"
                  ondragover="concDragOverFonte(event,'itau')" ondragleave="concDragLeaveFonte(event,'itau')" ondrop="concDropFonte(event,'itau')"
                  onclick="document.getElementById('file-itau').click()">
                 <div style="font-size:1.4rem;margin-bottom:.25rem;">📂</div>
-                <div style="font-size:.8rem;font-weight:600;">Clique ou arraste o extrato .xlsx</div>
+                <div style="font-size:.8rem;font-weight:600;">ou clique/arraste o extrato .xlsx</div>
             </div>
             <input type="file" id="file-itau" accept=".xlsx,.xls" style="display:none" onchange="concUploadFonte('itau',this.files);this.value=''">
             <div id="status-itau" style="font-size:.8rem;margin-top:.5rem;line-height:1.6;min-height:.8rem;"></div>
@@ -857,6 +866,36 @@ async function concUploadFonte(fonte, files) {
 
 async function concOmieApi() {
     showToast('Integração OMIE via API em desenvolvimento.', 'info');
+}
+
+async function concImportarItauApi() {
+    const de = document.getElementById('itau-api-de').value;
+    const ate = document.getElementById('itau-api-ate').value;
+    const status = document.getElementById('status-itau');
+    const btn = document.getElementById('itau-api-btn');
+    if (!de || !ate) { showToast('Informe o período (De / Até).', 'info'); return; }
+    btn.disabled = true; const txt = btn.textContent; btn.textContent = '⏳ Buscando...';
+    if (status) status.innerHTML = '<span style="color:#888;">Consultando API Itaú (mTLS)...</span>';
+    try {
+        const r = await concFetch('/api/conciliacao/itau/importar-api', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({date_from: de, date_to: ate}),
+        });
+        const d = await r.json();
+        if (!r.ok) {
+            if (status) status.innerHTML = `<div style="color:#f77;">❌ ${_esc(d.detail || 'Erro')}</div>`;
+            showToast('Falha na API Itaú.', 'error');
+        } else {
+            if (status) status.innerHTML = `<div style="color:#81c784;">✅ ${d.registros} lançamento(s) importado(s) via API</div>`;
+            showToast(`Extrato Itaú importado (${d.registros} lançamentos)!`, 'success');
+            concCarregarTudo();
+        }
+    } catch(e) {
+        if (status) status.innerHTML = `<div style="color:#f77;">❌ ${_esc(e.message)}</div>`;
+    } finally {
+        btn.disabled = false; btn.textContent = txt;
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => { concCarregarTudo(); });

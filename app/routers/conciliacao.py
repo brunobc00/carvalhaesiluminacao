@@ -420,6 +420,57 @@ async def upload_extrato(request: Request, file: UploadFile = File(...), fonte: 
     return {"ok": True, "fonte": fonte, "registros": qtd, "resultados_calculados": n}
 
 
+class ItauApiImportBody(BaseModel):
+    date_from: str   # YYYY-MM-DD
+    date_to:   str   # YYYY-MM-DD
+
+
+@router.post("/api/conciliacao/itau/importar-api")
+async def importar_itau_api(body: ItauApiImportBody, request: Request):
+    """Importa o extrato Itaú via API (mTLS) direto para a conciliação (fonte='itau')."""
+    sess = _require(request)
+    email = sess.get("email", "desconhecido")
+
+    from itau_client import fetch_eventos, ItauError
+    try:
+        eventos = fetch_eventos(body.date_from, body.date_to)
+    except ItauError as e:
+        raise HTTPException(502, str(e))
+    except Exception as e:
+        raise HTTPException(500, f"Erro inesperado na API Itaú: {e}")
+
+    if not eventos:
+        return {"ok": True, "fonte": "itau", "registros": 0, "resultados_calculados": 0,
+                "msg": "Nenhum lançamento no período."}
+
+    filename = f"API Itaú {body.date_from} a {body.date_to}"
+    with get_session() as s:
+        extrato = ConciliacaoExtrato(fonte="itau", filename=filename, importado_por=email)
+        s.add(extrato)
+        s.flush()
+        eid = extrato.id
+        datas = []
+        for ev in eventos:
+            s.add(ConciliacaoItau(
+                extrato_id=eid,
+                data=ev["data"],
+                lancamento=ev["lancamento"],
+                razao_social=ev["razao_social"],
+                valor=ev["valor"],
+                fonte_operadora=ev["fonte_operadora"],
+            ))
+            if ev["data"]:
+                datas.append(ev["data"])
+        extrato.qtd_registros = len(eventos)
+        if datas:
+            extrato.periodo_inicio = min(datas)
+            extrato.periodo_fim = max(datas)
+        s.commit()
+        n = _reconciliar(s)
+
+    return {"ok": True, "fonte": "itau", "registros": len(eventos), "resultados_calculados": n}
+
+
 @router.post("/api/conciliacao/reconciliar")
 async def reconciliar(request: Request):
     _require(request)
