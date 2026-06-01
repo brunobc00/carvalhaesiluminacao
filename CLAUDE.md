@@ -4,6 +4,14 @@
 >
 > **Acesso:** o domínio `carvalhaesiluminacao.automacaobbc.com` está atrás do **Cloudflare Zero Trust** — só `bbittarc@gmail.com` e `marcelocarvalhaes@gmail.com` entram. Funciona como workspace privado de orçamentos da Carvalhaes.
 
+## ⚠️ REGRA — Versionamento (NÃO esquecer)
+
+**Toda mudança no site DEVE:**
+1. Subir a versão no arquivo `VERSION` (semver: MAJOR.MINOR.PATCH — feature nova = MINOR, correção = PATCH).
+2. Adicionar uma entrada no topo do `CHANGELOG.md` (seções: Adicionado / Alterado / Corrigido / Removido / Segurança), com a data.
+
+A versão é lida por `app/version_utils.py` (`read_version`) e exibida no badge (canto superior direito) e em `/versoes` (que renderiza o `CHANGELOG.md`). Commit/PR sem bump de versão + changelog está incompleto.
+
 ## O que é este projeto
 
 Site/painel da **Carvalhaes Iluminação**: catálogo de produtos + **workspace de orçamentos**

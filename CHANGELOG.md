@@ -4,6 +4,22 @@ Todas as mudanças notáveis deste projeto são registradas aqui.
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 e este projeto segue [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [1.2.0] - 2026-06-01
+
+### Adicionado
+- **Conciliação Financeira** (`/admin/conciliacao`): importação de extratos Cielo/Rede/Itaú/Omie (XLSX) e reconciliação, migrada do `com.automacaobbc.ia`.
+- **Integração Itaú (Extrato via API)**: cliente nativo mTLS + OAuth (`itau_client.py`), botão "Importar via API" no card Itaú e endpoint `POST /api/conciliacao/itau/importar-api`.
+- **Fornecedores** (`/admin/fornecedores`) e **Catálogo** (`/admin/catalogo`): tabelas de preço com parsing (pandas/pdfplumber) e fallback de visão via Ollama.
+- **Gerador de Orçamentos** (`/admin/orcamento`): planilha (Google Sheets/colar) → PDF; endpoints Ollama (`/api/ollama/*`, `/api/instrucoes-llama`) para os botões de IA.
+
+### Alterado
+- Repositório renomeado para `com.automacaobbc.carvalhaesiluminacao` (deploy, volume de uploads externo, deploy-hook).
+- Acesso ao domínio restrito via Cloudflare Zero Trust (apenas e-mails autorizados).
+- Ollama apontando para o PC com GPU na LAN (`192.168.1.251`), não o servidor.
+
+### Corrigido
+- Página `/versoes` retornava 500 (`sec.items` colidia com o método de dict no Jinja → `sec['items']`).
+
 ## [1.1.0] - 2026-06-01
 
 ### Adicionado
