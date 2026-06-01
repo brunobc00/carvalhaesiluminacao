@@ -4,6 +4,11 @@ Todas as mudanças notáveis deste projeto são registradas aqui.
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 e este projeto segue [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [1.6.0] - 2026-06-01
+
+### Adicionado
+- Exportação do que está na tela (linhas filtradas/ordenadas) em **CSV, XLSX e PDF** nas abas de extrato. Endpoint genérico `POST /api/export` (openpyxl/WeasyPrint), reutilizável por todas as abas.
+
 ## [1.5.1] - 2026-06-01
 
 ### Alterado

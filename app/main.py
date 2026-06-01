@@ -13,7 +13,7 @@ load_dotenv()
 from database import engine, SessionLocal, Base
 from models import Produto, Orcamento, AdminUser
 from routers import produtos, orcamentos, admin
-from routers import fornecedores, sheets, orcamento_gen, google_auth, orcamento_ui, conciliacao, ollama
+from routers import fornecedores, sheets, orcamento_gen, google_auth, orcamento_ui, conciliacao, ollama, export
 from webhook import router as webhook_router
 from templates_config import templates
 from version_utils import read_version, parse_changelog
@@ -124,6 +124,7 @@ app.include_router(google_auth.router)
 app.include_router(orcamento_ui.router)
 app.include_router(conciliacao.router)
 app.include_router(ollama.router)
+app.include_router(export.router)
 
 
 # ─────────────────────────────────────────────

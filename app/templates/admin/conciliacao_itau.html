@@ -23,6 +23,10 @@
     <button id="b-backfill" class="px-3 py-1.5 rounded bg-amber-100 hover:bg-amber-200 text-amber-800 text-xs"
             title="Busca todo o histórico disponível, mês a mês, até o Itaú parar de responder">⬇ Backfill histórico</button>
     <span id="sync-status" class="text-xs text-gray-400"></span>
+    <span class="text-xs text-gray-400 ml-2">Exportar:</span>
+    <button data-fmt="csv"  class="b-exp px-2 py-1.5 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs">CSV</button>
+    <button data-fmt="xlsx" class="b-exp px-2 py-1.5 rounded bg-green-100 hover:bg-green-200 text-green-800 text-xs">XLSX</button>
+    <button data-fmt="pdf"  class="b-exp px-2 py-1.5 rounded bg-red-100 hover:bg-red-200 text-red-800 text-xs">PDF</button>
   </div>
 
   <!-- Tabela -->
@@ -54,6 +58,7 @@
 
 <script>
 let DADOS = [];
+let VISIVEIS = [];   // linhas atualmente exibidas (filtradas + ordenadas) — base da exportação
 let sortK = 'data', sortDir = -1; // -1 desc
 
 function fmtBRL(v){ return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
@@ -91,6 +96,7 @@ function render(){
     if(sortK==='valor'){ x=+x; y=+y; } else { x=String(x).toLowerCase(); y=String(y).toLowerCase(); }
     return (x<y?-1:x>y?1:0)*sortDir;
   });
+  VISIVEIS = rows;
   const tb=document.getElementById('tbody');
   tb.innerHTML = rows.length ? rows.map(r=>`
     <tr>
@@ -138,6 +144,21 @@ async function backfill(){
   }catch(e){ st.textContent='falha no backfill'; }
   finally{ b.disabled=false; b.textContent=t; }
 }
+
+const EXP_HEADERS = ['Data','Tipo','Valor (R$)','Documento','Histórico','Contraparte'];
+function expRows(){ return VISIVEIS.map(r=>[fmtData(r.data), r.tipo, fmtBRL(r.valor), r.documento, r.historico, r.contraparte]); }
+async function exportar(fmt){
+  const st=document.getElementById('sync-status'); st.textContent=`gerando ${fmt.toUpperCase()}…`;
+  try{
+    const resp=await fetch('/api/export',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({format:fmt, title:'Extrato Itaú', headers:EXP_HEADERS, rows:expRows(), filename:'extrato-itau'})});
+    if(!resp.ok){ st.textContent='falha ao exportar'; return; }
+    const blob=await resp.blob(); const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=`extrato-itau.${fmt}`; document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url); st.textContent='';
+  }catch(e){ st.textContent='falha ao exportar'; }
+}
+document.querySelectorAll('.b-exp').forEach(b=>b.addEventListener('click',()=>exportar(b.dataset.fmt)));
 
 document.querySelectorAll('#tbl th.th').forEach(th=>{
   th.addEventListener('click',()=>{ const k=th.dataset.k; if(k===sortK) sortDir*=-1; else { sortK=k; sortDir = (k==='data'?-1:1);} render(); });
