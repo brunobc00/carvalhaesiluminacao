@@ -92,12 +92,20 @@ def _parse_evento(ev: dict) -> dict | None:
         except (ValueError, TypeError):
             continue
 
+    origin = ev.get("origin") or {}
+    tipo = (origin.get("type") or "").strip()
+    if not tipo:
+        tipo = "Crédito" if not op.startswith("D") else "Débito"
+    documento = (lit.get("code") or "").strip()
+
     return {
         "data": data,
         "lancamento": lancamento[:300],
         "razao_social": razao[:300],
         "valor": valor,
         "fonte_operadora": _classificar(lancamento),
+        "tipo": tipo[:40],
+        "documento": documento[:40],
     }
 
 

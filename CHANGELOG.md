@@ -4,6 +4,12 @@ Todas as mudanças notáveis deste projeto são registradas aqui.
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 e este projeto segue [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [1.4.0] - 2026-06-01
+
+### Adicionado
+- Submenu em **Conciliação Financeira** com uma aba por fonte. Primeira: **Extrato Itaú** (`/admin/conciliacao/itau`) — tabela com o dado cru (Data · Tipo · Valor · Documento · Histórico · Contraparte), filtro de data, busca por nome/histórico/documento, filtro por valor (mín/máx) e ordenação por qualquer coluna.
+- Campos `tipo` (origin.type: PIX/SAD/…) e `documento` (literal.code) no extrato Itaú importado via API; endpoint `GET /api/conciliacao/itau/extrato`.
+
 ## [1.3.0] - 2026-06-01
 
 ### Alterado

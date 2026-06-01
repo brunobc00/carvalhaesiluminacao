@@ -177,6 +177,8 @@ class ConciliacaoItau(Base):
     razao_social     = Column(String(300))
     valor            = Column(Numeric(12, 2))
     fonte_operadora  = Column(String(20))  # 'cielo' | 'rede' | 'outros'
+    tipo             = Column(String(40))   # origin.type (PIX/SAD/...) — extrato cru via API
+    documento        = Column(String(40))   # literal.code — extrato cru via API
 
     extrato = relationship("ConciliacaoExtrato", back_populates="itau_lancamentos")
 

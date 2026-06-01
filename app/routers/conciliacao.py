@@ -458,6 +458,8 @@ async def importar_itau_api(body: ItauApiImportBody, request: Request):
                 razao_social=ev["razao_social"],
                 valor=ev["valor"],
                 fonte_operadora=ev["fonte_operadora"],
+                tipo=ev.get("tipo"),
+                documento=ev.get("documento"),
             ))
             if ev["data"]:
                 datas.append(ev["data"])
@@ -469,6 +471,26 @@ async def importar_itau_api(body: ItauApiImportBody, request: Request):
         n = _reconciliar(s)
 
     return {"ok": True, "fonte": "itau", "registros": len(eventos), "resultados_calculados": n}
+
+
+@router.get("/api/conciliacao/itau/extrato")
+def extrato_itau_cru(request: Request):
+    """Extrato Itaú cru (todos os lançamentos importados), p/ a aba dedicada.
+    Filtro/ordenação são feitos no front. Retorna lista bruta."""
+    _require(request)
+    with get_session() as s:
+        rows = (s.query(ConciliacaoItau)
+                  .order_by(ConciliacaoItau.data.desc(), ConciliacaoItau.id.desc())
+                  .all())
+        return [{
+            "id": r.id,
+            "data": r.data.strftime("%Y-%m-%d") if r.data else "",
+            "tipo": r.tipo or "",
+            "valor": float(r.valor) if r.valor is not None else 0.0,
+            "documento": r.documento or "",
+            "historico": r.lancamento or "",
+            "contraparte": r.razao_social or "",
+        } for r in rows]
 
 
 @router.post("/api/conciliacao/reconciliar")

@@ -1,0 +1,116 @@
+{% extends "admin/base_admin.html" %}
+{% block page_title %}Extrato Itaú{% endblock %}
+{% block nav_conciliacao_itau %}bg-amber-500/10 text-amber-400{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl">
+  <p class="text-sm text-gray-500 mb-4">Extrato bruto da conta Itaú (dados crus, sem reconciliação). Importe novos períodos em <a href="/admin/conciliacao" class="text-amber-600 hover:underline">Conciliação</a>.</p>
+
+  <!-- Filtros -->
+  <div class="bg-white border border-gray-200 rounded-lg p-3 mb-4 flex flex-wrap items-end gap-3 text-sm">
+    <label class="flex flex-col gap-1 text-xs text-gray-500">De
+      <input type="date" id="f-de" class="border rounded px-2 py-1 text-gray-800"></label>
+    <label class="flex flex-col gap-1 text-xs text-gray-500">Até
+      <input type="date" id="f-ate" class="border rounded px-2 py-1 text-gray-800"></label>
+    <label class="flex flex-col gap-1 text-xs text-gray-500 flex-1 min-w-[180px]">Buscar (histórico / contraparte / documento / tipo)
+      <input type="text" id="f-q" placeholder="ex: cielo, boleto, pix..." class="border rounded px-2 py-1 text-gray-800"></label>
+    <label class="flex flex-col gap-1 text-xs text-gray-500">Valor mín.
+      <input type="number" step="0.01" id="f-vmin" class="border rounded px-2 py-1 w-28 text-gray-800"></label>
+    <label class="flex flex-col gap-1 text-xs text-gray-500">Valor máx.
+      <input type="number" step="0.01" id="f-vmax" class="border rounded px-2 py-1 w-28 text-gray-800"></label>
+    <button id="f-limpar" class="px-3 py-1.5 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs">Limpar</button>
+  </div>
+
+  <!-- Tabela -->
+  <div class="bg-white border border-gray-200 rounded-lg overflow-x-auto">
+    <table class="w-full text-sm" id="tbl">
+      <thead class="bg-gray-50 text-gray-600 select-none">
+        <tr>
+          <th data-k="data"        class="th px-3 py-2 text-left  cursor-pointer">Data</th>
+          <th data-k="tipo"        class="th px-3 py-2 text-left  cursor-pointer">Tipo</th>
+          <th data-k="valor"       class="th px-3 py-2 text-right cursor-pointer">Valor (R$)</th>
+          <th data-k="documento"   class="th px-3 py-2 text-left  cursor-pointer">Documento</th>
+          <th data-k="historico"   class="th px-3 py-2 text-left  cursor-pointer">Histórico</th>
+          <th data-k="contraparte" class="th px-3 py-2 text-left  cursor-pointer">Contraparte</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+  <div id="resumo" class="text-xs text-gray-500 mt-2"></div>
+</div>
+
+<style>
+  #tbl th.th:hover { color:#b45309; }
+  #tbl th .arrow { font-size:.7em; color:#b45309; }
+  #tbl tbody tr:nth-child(even){ background:#fafafa; }
+  #tbl tbody td{ padding:.4rem .75rem; border-top:1px solid #f0f0f0; }
+  .val-c{ color:#15803d; } .val-d{ color:#b91c1c; }
+</style>
+
+<script>
+let DADOS = [];
+let sortK = 'data', sortDir = -1; // -1 desc
+
+function fmtBRL(v){ return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
+function fmtData(s){ if(!s) return ''; const [y,m,d]=s.split('-'); return `${d}/${m}/${y}`; }
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+async function carregar(){
+  const r = await fetch('/api/conciliacao/itau/extrato', {credentials:'same-origin'});
+  if(!r.ok){ document.getElementById('tbody').innerHTML = `<tr><td colspan="6" class="text-center text-red-600 py-4">Erro ao carregar (${r.status})</td></tr>`; return; }
+  DADOS = await r.json();
+  render();
+}
+
+function filtrar(){
+  const de=document.getElementById('f-de').value, ate=document.getElementById('f-ate').value;
+  const q=document.getElementById('f-q').value.trim().toLowerCase();
+  const vmin=parseFloat(document.getElementById('f-vmin').value), vmax=parseFloat(document.getElementById('f-vmax').value);
+  return DADOS.filter(r=>{
+    if(de && r.data < de) return false;
+    if(ate && r.data > ate) return false;
+    if(!isNaN(vmin) && r.valor < vmin) return false;
+    if(!isNaN(vmax) && r.valor > vmax) return false;
+    if(q){
+      const hay=`${r.historico} ${r.contraparte} ${r.documento} ${r.tipo}`.toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function render(){
+  let rows = filtrar();
+  rows.sort((a,b)=>{
+    let x=a[sortK], y=b[sortK];
+    if(sortK==='valor'){ x=+x; y=+y; } else { x=String(x).toLowerCase(); y=String(y).toLowerCase(); }
+    return (x<y?-1:x>y?1:0)*sortDir;
+  });
+  const tb=document.getElementById('tbody');
+  tb.innerHTML = rows.length ? rows.map(r=>`
+    <tr>
+      <td class="whitespace-nowrap">${fmtData(r.data)}</td>
+      <td>${esc(r.tipo)}</td>
+      <td class="text-right whitespace-nowrap ${r.valor<0?'val-d':'val-c'}">${fmtBRL(r.valor)}</td>
+      <td>${esc(r.documento)}</td>
+      <td>${esc(r.historico)}</td>
+      <td>${esc(r.contraparte)}</td>
+    </tr>`).join('') : `<tr><td colspan="6" class="text-center text-gray-400 py-4">Nenhum lançamento.</td></tr>`;
+  // cabeçalho com seta
+  document.querySelectorAll('#tbl th.th').forEach(th=>{
+    const k=th.dataset.k;
+    th.innerHTML = th.textContent.replace(/ ?[▲▼]$/,'') + (k===sortK ? `<span class="arrow"> ${sortDir>0?'▲':'▼'}</span>` : '');
+  });
+  const soma = rows.reduce((s,r)=>s+r.valor,0);
+  document.getElementById('resumo').textContent = `${rows.length} lançamento(s) · saldo dos exibidos: ${fmtBRL(soma)}`;
+}
+
+document.querySelectorAll('#tbl th.th').forEach(th=>{
+  th.addEventListener('click',()=>{ const k=th.dataset.k; if(k===sortK) sortDir*=-1; else { sortK=k; sortDir = (k==='data'?-1:1);} render(); });
+});
+['f-de','f-ate','f-q','f-vmin','f-vmax'].forEach(id=>document.getElementById(id).addEventListener('input',render));
+document.getElementById('f-limpar').addEventListener('click',()=>{ ['f-de','f-ate','f-q','f-vmin','f-vmax'].forEach(id=>document.getElementById(id).value=''); render(); });
+document.addEventListener('DOMContentLoaded', carregar);
+</script>
+{% endblock %}

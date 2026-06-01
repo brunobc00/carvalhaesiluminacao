@@ -31,3 +31,8 @@ def catalogo(request: Request, admin: str = Depends(require_admin)):
 @router.get("/conciliacao")
 def conciliacao(request: Request, admin: str = Depends(require_admin)):
     return templates.TemplateResponse(request, "admin/conciliacao.html", {"admin": admin})
+
+
+@router.get("/conciliacao/itau")
+def conciliacao_itau(request: Request, admin: str = Depends(require_admin)):
+    return templates.TemplateResponse(request, "admin/conciliacao_itau.html", {"admin": admin})
