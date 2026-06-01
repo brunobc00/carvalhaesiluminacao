@@ -107,8 +107,9 @@ def _mes_anterior(d: date) -> date:
     return primeiro - timedelta(days=1)
 
 
-def backfill(max_meses: int = 24) -> dict:
-    """Varre mês a mês para trás até o Itaú parar de devolver dados (2 meses vazios seguidos)."""
+def backfill(max_meses: int = 72) -> dict:
+    """Varre mês a mês para trás até o Itaú parar de devolver dados (2 meses vazios seguidos).
+    Teto de 72 meses como salvaguarda — o normal é parar antes, quando o Itaú zera."""
     hoje = date.today()
     fim = hoje
     ini = hoje.replace(day=1)

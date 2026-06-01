@@ -4,6 +4,11 @@ Todas as mudanças notáveis deste projeto são registradas aqui.
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 e este projeto segue [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [1.5.1] - 2026-06-01
+
+### Alterado
+- Backfill do Itaú: teto ampliado de 24 para 72 meses (parar só quando o Itaú zera de fato).
+
 ## [1.5.0] - 2026-06-01
 
 ### Adicionado
